@@ -10,7 +10,6 @@ import (
 	"github.com/robfig/cron/v3"
 	"golang.org/x/net/html/charset"
 	"net/url"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -54,13 +53,13 @@ func Crond() {
 	//}
 	//
 	//fmt.Println(inserId,err, publishData, publishDataKeys, publishDataValues)
-	link := &Article{
-		OriginUrl: "https://mbd.baidu.com/newspage/data/landingsuper?context=%7B%22nid%22%3A%22news_9278787920922000269%22%7D&n_type=0&p_from=1",
-	}
-
-	_ = CollectDetail(link)
-	fmt.Println(link.Title, "--------", link.Content)
-	os.Exit(0)
+	//link := &Article{
+	//	OriginUrl: "https://mbd.baidu.com/newspage/data/landingsuper?context=%7B%22nid%22%3A%22news_9278787920922000269%22%7D&n_type=0&p_from=1",
+	//}
+	//
+	//_ = CollectDetail(link)
+	//fmt.Println(link.Title, "--------", link.Content)
+	//os.Exit(0)
 	//1小时运行一次，采集地址，加入到地址池
 	//每分钟运行一次，检查是否有需要采集的文章s
 	crontab := cron.New(cron.WithSeconds())
