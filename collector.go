@@ -426,130 +426,7 @@ func (article *Article) ParseNormalDetail(doc *goquery.Document, body string) {
 	article.ParseTitle(doc, body)
 
 	//尝试获取正文内容
-	content := ""
-	contentText := ""
-	description := ""
-	contentLength := 0
-
-	//对一些固定的内容，直接获取值
-	contentItems := doc.Find("UCAPCONTENT,#mainText,.article-content,#article-content,#articleContnet,.entry-content,.the_body,.rich_media_content,#js_content,.word_content,.pages_content,.wendang_content,#content")
-	if contentItems.Length() > 0 {
-		for i := range contentItems.Nodes {
-			contentItem := contentItems.Eq(i)
-			content, _ = contentItem.Html()
-			contentText = contentItem.Text()
-			contentText = strings.Replace(contentText, " ", "", -1)
-			contentText = strings.Replace(contentText, "\n", "", -1)
-			contentText = strings.Replace(contentText, "\r", "", -1)
-			contentText = strings.Replace(contentText, "\t", "", -1)
-			nameRune := []rune(contentText)
-			curLen := len(nameRune)
-			if curLen > 150 {
-				description = string(nameRune[:150])
-			}
-			//判断内容的真实性
-			if curLen < config.CollectorConfig.ContentMinLength {
-				contentText = ""
-			}
-			aCount := contentItem.Find("a").Length()
-			if aCount > 5 {
-				//太多连接了，直接放弃该内容
-				contentText = ""
-			}
-			//排除一些不对的标签
-			otherLength := contentItem.Find("input,textarea,form,button,footer,.footer").Length()
-			if otherLength > 0 {
-				contentText = ""
-			}
-			//根据规则过滤
-			if HasContain(contentText, config.CollectorConfig.ContentExclude) {
-				contentText = ""
-			}
-
-			inner := contentItem.Find("*")
-			for i := range inner.Nodes {
-				item := inner.Eq(i)
-				if HasContain(item.Text(), config.CollectorConfig.ContentExcludeLine) {
-					item.Remove()
-				}
-			}
-
-			if len(contentText) > 0 {
-				break
-			}
-		}
-	}
-
-	if contentText == "" {
-		content = ""
-		//通用的获取方法
-		divs := doc.Find("div")
-		for i := range divs.Nodes {
-			item := divs.Eq(i)
-			pCount := item.ChildrenFiltered("p").Length()
-			brCount := item.ChildrenFiltered("br").Length()
-			aCount := item.Find("a").Length()
-			if aCount > 5 {
-				//太多连接了，直接放弃该内容
-				continue
-			}
-			//排除一些不对的标签
-			otherLength := item.Find("input,textarea,form,button,footer,.footer").Length()
-			if otherLength > 0 {
-				continue
-			}
-			if pCount > 0 || brCount > 0 {
-				//表示查找到了一个p
-				//移除空格和换行
-				checkText := item.Text()
-				checkText = strings.Replace(checkText, " ", "", -1)
-				checkText = strings.Replace(checkText, "\n", "", -1)
-				checkText = strings.Replace(checkText, "\r", "", -1)
-				checkText = strings.Replace(checkText, "\t", "", -1)
-				nameRune := []rune(checkText)
-				curLen := len(nameRune)
-
-				//根据规则过滤
-				if HasContain(checkText, config.CollectorConfig.ContentExclude) {
-					continue
-				}
-				if curLen <= config.CollectorConfig.ContentMinLength {
-					continue
-				}
-
-				item.Children().RemoveFiltered("h1")
-				inner := item.Find("*")
-				for i := range inner.Nodes {
-					innerItem := inner.Eq(i)
-					if HasContain(innerItem.Text(), config.CollectorConfig.ContentExcludeLine) {
-						innerItem.Remove()
-					}
-				}
-
-				if curLen > contentLength {
-					contentLength = curLen
-					content, _ = item.Html()
-					contentText = checkText
-					if curLen <= 150 {
-						description = string(nameRune)
-					} else {
-						description = string(nameRune[:150])
-					}
-				}
-			}
-		}
-	}
-	//对内容进行处理
-	re, _ := regexp.Compile("src=[\"']+?(.*?)[\"']+?[^>]+?>")
-	content = re.ReplaceAllStringFunc(content, article.ReplaceSrc)
-
-	re2, _ := regexp.Compile("href=[\"']+?(.*?)[\"']+?[^>]+?>")
-	content = re2.ReplaceAllStringFunc(content, article.ReplaceHref)
-
-	article.ContentText = contentText
-	article.Description = strings.TrimSpace(description)
-	article.Content = strings.TrimSpace(content)
-	//	fmt.Println(link.Content)
+	article.ParseContent(doc, body)
 
 	//尝试获取作者
 	reg := regexp.MustCompile(`<meta\s+name="Author"\s+content="(.*?)"[^>]*>`)
@@ -681,6 +558,133 @@ func (article *Article) ParseTitle(doc *goquery.Document, body string) {
 	}
 
 	article.Title = title
+}
+
+
+func(article *Article)ParseContent(doc *goquery.Document, body string) {
+	content := ""
+	contentText := ""
+	description := ""
+	contentLength := 0
+
+	//对一些固定的内容，直接获取值
+	contentItems := doc.Find("UCAPCONTENT,#mainText,.article-content,#article-content,#articleContnet,.entry-content,.the_body,.rich_media_content,#js_content,.word_content,.pages_content,.wendang_content,#content")
+	if contentItems.Length() > 0 {
+		for i := range contentItems.Nodes {
+			contentItem := contentItems.Eq(i)
+			content, _ = contentItem.Html()
+			contentText = contentItem.Text()
+			contentText = strings.Replace(contentText, " ", "", -1)
+			contentText = strings.Replace(contentText, "\n", "", -1)
+			contentText = strings.Replace(contentText, "\r", "", -1)
+			contentText = strings.Replace(contentText, "\t", "", -1)
+			nameRune := []rune(contentText)
+			curLen := len(nameRune)
+			if curLen > 150 {
+				description = string(nameRune[:150])
+			}
+			//判断内容的真实性
+			if curLen < config.CollectorConfig.ContentMinLength {
+				contentText = ""
+			}
+			aCount := contentItem.Find("a").Length()
+			if aCount > 5 {
+				//太多连接了，直接放弃该内容
+				contentText = ""
+			}
+			//排除一些不对的标签
+			otherLength := contentItem.Find("input,textarea,form,button,footer,.footer").Length()
+			if otherLength > 0 {
+				contentText = ""
+			}
+			//根据规则过滤
+			if HasContain(contentText, config.CollectorConfig.ContentExclude) {
+				contentText = ""
+			}
+
+			inner := contentItem.Find("*")
+			for i := range inner.Nodes {
+				item := inner.Eq(i)
+				if HasContain(item.Text(), config.CollectorConfig.ContentExcludeLine) {
+					item.Remove()
+				}
+			}
+
+			if len(contentText) > 0 {
+				break
+			}
+		}
+	}
+
+	if contentText == "" {
+		content = ""
+		//通用的获取方法
+		divs := doc.Find("div")
+		for i := range divs.Nodes {
+			item := divs.Eq(i)
+			pCount := item.ChildrenFiltered("p").Length()
+			brCount := item.ChildrenFiltered("br").Length()
+			aCount := item.Find("a").Length()
+			if aCount > 5 {
+				//太多连接了，直接放弃该内容
+				continue
+			}
+			//排除一些不对的标签
+			otherLength := item.Find("input,textarea,form,button,footer,.footer").Length()
+			if otherLength > 0 {
+				continue
+			}
+			if pCount > 0 || brCount > 0 {
+				//表示查找到了一个p
+				//移除空格和换行
+				checkText := item.Text()
+				checkText = strings.Replace(checkText, " ", "", -1)
+				checkText = strings.Replace(checkText, "\n", "", -1)
+				checkText = strings.Replace(checkText, "\r", "", -1)
+				checkText = strings.Replace(checkText, "\t", "", -1)
+				nameRune := []rune(checkText)
+				curLen := len(nameRune)
+
+				//根据规则过滤
+				if HasContain(checkText, config.CollectorConfig.ContentExclude) {
+					continue
+				}
+				if curLen <= config.CollectorConfig.ContentMinLength {
+					continue
+				}
+
+				item.Children().RemoveFiltered("h1")
+				inner := item.Find("*")
+				for i := range inner.Nodes {
+					innerItem := inner.Eq(i)
+					if HasContain(innerItem.Text(), config.CollectorConfig.ContentExcludeLine) {
+						innerItem.Remove()
+					}
+				}
+
+				if curLen > contentLength {
+					contentLength = curLen
+					content, _ = item.Html()
+					contentText = checkText
+					if curLen <= 150 {
+						description = string(nameRune)
+					} else {
+						description = string(nameRune[:150])
+					}
+				}
+			}
+		}
+	}
+	//对内容进行处理
+	re, _ := regexp.Compile("src=[\"']+?(.*?)[\"']+?[^>]+?>")
+	content = re.ReplaceAllStringFunc(content, article.ReplaceSrc)
+
+	re2, _ := regexp.Compile("href=[\"']+?(.*?)[\"']+?[^>]+?>")
+	content = re2.ReplaceAllStringFunc(content, article.ReplaceHref)
+
+	article.ContentText = contentText
+	article.Description = strings.TrimSpace(description)
+	article.Content = strings.TrimSpace(content)
 }
 
 func (article *Article) GetDomain() {

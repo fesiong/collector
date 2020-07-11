@@ -21,7 +21,7 @@ func initDB() {
 	}
 	db.DB().SetMaxIdleConns(config.MySQLConfig.MaxIdleConnections)
 	db.DB().SetMaxOpenConns(config.MySQLConfig.MaxOpenConnections)
-	db.DB().SetConnMaxLifetime(5) //mysql空闲连接10秒关闭，这里设置一半时间
+	db.DB().SetConnMaxLifetime(-1) //不重新利用，可以执行得更快
 
 	//禁用复数表名
 	db.SingularTable(true)
