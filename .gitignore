@@ -2,3 +2,6 @@
 .idea
 /vendor
 /config.json
+/collector.mac.app
+/collector.linux.app
+/collector.exe
