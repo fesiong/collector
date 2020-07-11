@@ -10,6 +10,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"golang.org/x/net/html/charset"
 	"net/url"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -53,13 +54,13 @@ func Crond() {
 	//}
 	//
 	//fmt.Println(inserId,err, publishData, publishDataKeys, publishDataValues)
-	//link := &Article{
-	//	OriginUrl: "http://www.bjdx.gov.cn/bjsdxqrmzf/dwxx/ywjj/1380192/index.html",
-	//}
-	//
-	//_ = CollectDetail(link)
-	//fmt.Println(link.Title, "--------", link.Content)
-	//os.Exit(0)
+	link := &Article{
+		OriginUrl: "https://mbd.baidu.com/newspage/data/landingsuper?context=%7B%22nid%22%3A%22news_9278787920922000269%22%7D&n_type=0&p_from=1",
+	}
+
+	_ = CollectDetail(link)
+	fmt.Println(link.Title, "--------", link.Content)
+	os.Exit(0)
 	//1小时运行一次，采集地址，加入到地址池
 	//每分钟运行一次，检查是否有需要采集的文章s
 	crontab := cron.New(cron.WithSeconds())
@@ -486,6 +487,7 @@ func (article *Article) ParseNormalDetail(doc *goquery.Document, body string) {
 		for i := range divs.Nodes {
 			item := divs.Eq(i)
 			pCount := item.ChildrenFiltered("p").Length()
+			brCount := item.ChildrenFiltered("br").Length()
 			aCount := item.Find("a").Length()
 			if aCount > 5 {
 				//太多连接了，直接放弃该内容
@@ -496,7 +498,7 @@ func (article *Article) ParseNormalDetail(doc *goquery.Document, body string) {
 			if otherLength > 0 {
 				continue
 			}
-			if pCount > 0 {
+			if pCount > 0 || brCount > 0 {
 				//表示查找到了一个p
 				//移除空格和换行
 				checkText := item.Text()
@@ -515,6 +517,7 @@ func (article *Article) ParseNormalDetail(doc *goquery.Document, body string) {
 					continue
 				}
 
+				item.Children().RemoveFiltered("h1")
 				inner := item.Find("*")
 				for i := range inner.Nodes {
 					innerItem := inner.Eq(i)
@@ -647,17 +650,18 @@ func (article *Article) ParseTitle(doc *goquery.Document, body string) {
 			}
 		}
 	}
-
-	//如果标题为空，那么尝试h2
-	h2s := doc.Find("h2,.name")
-	if h2s.Length() > 0 {
-		for i := range h2s.Nodes {
-			item := h2s.Eq(i)
-			item.Children().Remove()
-			text := strings.TrimSpace(item.Text())
-			textLen := utf8.RuneCountInString(text)
-			if textLen >= config.CollectorConfig.TitleMinLength && textLen > utf8.RuneCountInString(title) && !HasContain(text, config.CollectorConfig.TitleExclude) && !HasPrefix(text, config.CollectorConfig.TitleExcludePrefix) && !HasSuffix(text, config.CollectorConfig.TitleExcludeSuffix) {
-				title = text
+	if title == "" {
+		//如果标题为空，那么尝试h2
+		h2s := doc.Find("h2,.name")
+		if h2s.Length() > 0 {
+			for i := range h2s.Nodes {
+				item := h2s.Eq(i)
+				item.Children().Remove()
+				text := strings.TrimSpace(item.Text())
+				textLen := utf8.RuneCountInString(text)
+				if textLen >= config.CollectorConfig.TitleMinLength && textLen > utf8.RuneCountInString(title) && !HasContain(text, config.CollectorConfig.TitleExclude) && !HasPrefix(text, config.CollectorConfig.TitleExcludePrefix) && !HasSuffix(text, config.CollectorConfig.TitleExcludeSuffix) {
+					title = text
+				}
 			}
 		}
 	}
