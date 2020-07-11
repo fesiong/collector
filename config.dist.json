@@ -1,0 +1,95 @@
+{
+  "mysql": {
+    "Database": "collector",
+    "User": "root",
+    "Password": "root",
+    "Charset": "utf8mb4",
+    "Host": "127.0.0.1",
+    "TablePrefix": "fe_",
+    "Port": 3306,
+    "MaxIdleConnections": 1000,
+    "MaxOpenConnections": 100000
+  },
+  "server": {
+    "SiteName"    : "万能采集器",
+    "Host"        : "localhost",
+    "Env"         : "production",
+    "Port"        : 8088
+  },
+  "collector": {
+    "ErrorTimes": 5,
+    "Channels": 5,
+    "TitleMinLength": 6,
+    "ContentMinLength": 200,
+    "TitleExclude": [
+      "法律声明",
+      "关于我们",
+      "站点地图",
+      "区长信箱",
+      "政务服务",
+      "政务公开",
+      "领导介绍",
+      "Government",
+      "China",
+      "首页",
+      "当前页",
+      "当前位置",
+      "来源：",
+      "点击：",
+      "关注我们",
+      "浏览次数",
+      "信息分类",
+      "索引号"
+    ],
+    "TitleExcludePrefix": [
+      "404",
+      "403",
+      "NotFound"
+    ],
+    "TitleExcludeSuffix": [
+      "网站",
+      "网",
+      "政府",
+      "门户"
+    ],
+    "ContentExclude": [
+      "ICP备",
+      "政府网站标识码",
+      "以上版本浏览本站",
+      "版权声明",
+      "公网安备"
+    ],
+    "ContentExcludeLine": [
+      "背景色：",
+      "时间：",
+      "作者：",
+      "来源：",
+      "编辑：",
+      "时间:",
+      "来源:",
+      "作者:",
+      "编辑:",
+      "摄影：",
+      "摄影:",
+      "更多精彩",
+      "官方微信",
+      "一篇：",
+      "相关附件",
+      "qrcode"
+    ]
+  },
+  "content": {
+    "AutoPublish": false,
+    "TableName": "fe_new_article",
+    "IdField": "id",
+    "TitleField": "title",
+    "CreatedTimeField": "created_time",
+    "KeywordsField": "keywords",
+    "DescriptionField": "description",
+    "AuthorField": "author",
+    "ViewsField": "views",
+    "ContentTableName": "fe_new_article_data",
+    "ContentIdField": "id",
+    "ContentField": "content"
+  }
+}
