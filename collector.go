@@ -591,11 +591,24 @@ func(article *Article)ParseContent(doc *goquery.Document, body string) {
 				//太多连接了，直接放弃该内容
 				contentText = ""
 			}
+			//查找内部div，如果存在，则使用它替代上一级
+			divs := contentItem.Find("div")
+			//只有内部没有div了或者内部div内容太少，才认为是真正的内容
+			if divs.Length() > 0 {
+				for i := range divs.Nodes {
+					div := divs.Eq(i)
+					if (div.Find("div").Length() == 0 || utf8.RuneCountInString(div.Find("div").Text()) < 100) && utf8.RuneCountInString(div.Text()) >= config.CollectorConfig.ContentMinLength {
+						contentItem = div
+						break
+					}
+				}
+			}
 			//排除一些不对的标签
 			otherLength := contentItem.Find("input,textarea,form,button,footer,.footer").Length()
 			if otherLength > 0 {
 				contentText = ""
 			}
+			contentItem.Find("h1").Remove()
 			//根据规则过滤
 			if HasContain(contentText, config.CollectorConfig.ContentExclude) {
 				contentText = ""
@@ -633,6 +646,9 @@ func(article *Article)ParseContent(doc *goquery.Document, body string) {
 			if otherLength > 0 {
 				continue
 			}
+			if item.Find("div").Length() > 0 && utf8.RuneCountInString(item.Find("div").Text()) >= config.CollectorConfig.ContentMinLength {
+				continue
+			}
 			if pCount > 0 || brCount > 0 {
 				//表示查找到了一个p
 				//移除空格和换行
@@ -652,7 +668,7 @@ func(article *Article)ParseContent(doc *goquery.Document, body string) {
 					continue
 				}
 
-				item.Children().RemoveFiltered("h1")
+				item.Find("h1,a").Remove()
 				inner := item.Find("*")
 				for i := range inner.Nodes {
 					innerItem := inner.Eq(i)
