@@ -353,27 +353,30 @@ func CollectDetail(article *Article) error {
 	}
 	defer resp.Body.Close()
 	//检查网站编码，并转成uft8
-	//_, htmlEncode, _ := charset.DetermineEncoding([]byte(body), "")
-	//fmt.Println( htmlEncode)
 	var htmlEncode string
 	//先尝试读取charset
-	reg := regexp.MustCompile(`(?i)charset=["']?([a-z0-9\-]+)`)
-	match := reg.FindStringSubmatch(body)
-	if len(match) > 1 {
-		htmlEncode = strings.ToLower(match[1])
-		if htmlEncode != "utf-8" && htmlEncode != "utf8" {
-			body = library.ConvertToString(body, "gbk", "utf-8")
-		}
-	} else {
-		reg = regexp.MustCompile(`(?is)<title[^>]*>(.*?)<\/title>`)
-		match = reg.FindStringSubmatch(body)
+	contentType := strings.ToLower(resp.Header.Get("Content-Type"))
+	if contentType == "" {
+		reg := regexp.MustCompile(`(?i)charset=["']?([a-z0-9\-]+)`)
+		match := reg.FindStringSubmatch(body)
 		if len(match) > 1 {
-			aa := match[1]
-			_, htmlEncode, _ = charset.DetermineEncoding([]byte(aa), "")
-			if htmlEncode != "utf-8" {
+			htmlEncode = strings.ToLower(match[1])
+			if htmlEncode != "utf-8" && htmlEncode != "utf8" {
 				body = library.ConvertToString(body, "gbk", "utf-8")
 			}
+		} else {
+			reg = regexp.MustCompile(`(?is)<title[^>]*>(.*?)<\/title>`)
+			match = reg.FindStringSubmatch(body)
+			if len(match) > 1 {
+				aa := match[1]
+				_, htmlEncode, _ = charset.DetermineEncoding([]byte(aa), "")
+				if htmlEncode != "utf-8" {
+					body = library.ConvertToString(body, "gbk", "utf-8")
+				}
+			}
 		}
+	} else if !strings.Contains(contentType, "utf-8") {
+		body = library.ConvertToString(body, "gbk", "utf-8")
 	}
 	//先删除一些不必要的标签
 	re, _ := regexp.Compile("\\<style[\\S\\s]+?\\</style\\>")
