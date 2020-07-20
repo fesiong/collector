@@ -356,13 +356,23 @@ func CollectDetail(article *Article) error {
 	//_, htmlEncode, _ := charset.DetermineEncoding([]byte(body), "")
 	//fmt.Println( htmlEncode)
 	var htmlEncode string
-	reg := regexp.MustCompile(`(?i:)<title[^>]*>(.*?)<\/title>`)
+	//先尝试读取charset
+	reg := regexp.MustCompile(`(?i)charset=["']?([a-z0-9\-]+)`)
 	match := reg.FindStringSubmatch(body)
 	if len(match) > 1 {
-		aa := match[1]
-		_, htmlEncode, _ = charset.DetermineEncoding([]byte(aa), "")
-		if htmlEncode != "utf-8" {
+		htmlEncode = strings.ToLower(match[1])
+		if htmlEncode != "utf-8" && htmlEncode != "utf8" {
 			body = library.ConvertToString(body, "gbk", "utf-8")
+		}
+	} else {
+		reg = regexp.MustCompile(`(?is)<title[^>]*>(.*?)<\/title>`)
+		match = reg.FindStringSubmatch(body)
+		if len(match) > 1 {
+			aa := match[1]
+			_, htmlEncode, _ = charset.DetermineEncoding([]byte(aa), "")
+			if htmlEncode != "utf-8" {
+				body = library.ConvertToString(body, "gbk", "utf-8")
+			}
 		}
 	}
 	//先删除一些不必要的标签
