@@ -1,0 +1,75 @@
+{% include "partial/header.html" %}
+<main class="container">
+    <div class="install">
+        <h1>初始化采集工具</h1>
+        <form class="layui-form" onsubmit="return false;">
+            <div class="layui-form-item">
+                <label class="layui-form-label">数据库地址</label>
+                <div class="layui-input-block">
+                    <input type="text" name="host" required  lay-verify="required" placeholder="一般是localhost" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">数据库端口</label>
+                <div class="layui-input-block">
+                    <input type="text" name="port" required  lay-verify="required" placeholder="一般是3306" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">数据库名称</label>
+                <div class="layui-input-block">
+                    <input type="text" name="database" required  lay-verify="required" placeholder="安装到哪个数据库，如果你需要本地发布，请按照到本地网站的数据库中" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">数据库用户</label>
+                <div class="layui-input-block">
+                    <input type="text" name="user" required  lay-verify="required" placeholder="填写数据库用户名" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">数据库密码</label>
+                <div class="layui-input-block">
+                    <input type="text" name="password" required  lay-verify="required" placeholder="填写数据库密码" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">表前缀</label>
+                <div class="layui-input-block">
+                    <input type="text" name="table_prefix" required  lay-verify="required" placeholder="默认是fe_" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button class="layui-btn" lay-submit lay-filter="install">确认初始化</button>
+                    <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</main>
+{% include "partial/footer.html" %}
+<script>
+    layui.use(['form', 'layer'], function(){
+        let form = layui.form;
+        let layer = layui.layer;
+        let $ = layui.$;
+
+        //监听提交
+        form.on('submit(install)', function(data){
+            let postData = data.field;
+            postData.port = Number(postData.port)
+            console.log(postData)
+            $.post("/install", postData, function (res) {
+                if(res.code === 0) {
+                    layer.alert(res.msg, function(){
+                        window.location.href = "/";
+                    });
+                } else {
+                    layer.msg(res.msg);
+                }
+            }, 'json');
+            return false;
+        });
+    });
+</script>

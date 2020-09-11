@@ -1,0 +1,61 @@
+{
+  "mysql": {
+    "database": "",
+    "user": "",
+    "password": "",
+    "charset": "utf8mb4",
+    "host": "127.0.0.1",
+    "table_prefix": "fe_",
+    "port": 3306,
+    "max_idle_connections": 1000,
+    "max_open_connections": 100000
+  },
+  "server": {
+    "site_name"    : "万能采集器",
+    "host"        : "localhost",
+    "env"         : "production",
+    "log_level"    : "error",
+    "port"        : 8088
+  },
+  "collector": {
+    "error_times": 5,
+    "channels": 5,
+    "title_min_length": 6,
+    "content_min_length": 200,
+    "title_exclude": [
+      "关于我们"
+    ],
+    "title_exclude_prefix": [
+      "NotFound"
+    ],
+    "title_exclude_suffix": [
+      "网站"
+    ],
+    "content_exclude": [
+      "版权声明"
+    ],
+    "content_exclude_line": [
+      "更多精彩",
+      "字体"
+    ]
+  },
+  "content": {
+    "auto_publish": 0,
+    "table_name": "fe_new_article",
+    "id_field": "id",
+    "title_field": "title",
+    "created_time_field": "add_time",
+    "keywords_field": "keywords",
+    "description_field": "description",
+    "author_field": "",
+    "views_field": "",
+    "content_table_name": "",
+    "content_id_field": "id",
+    "content_field": "content",
+    "remote_url": "",
+    "content_type": "urlencode",
+    "headers": null,
+    "cookies": null,
+    "extra_fields": null
+  }
+}

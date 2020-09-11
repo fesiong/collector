@@ -1,0 +1,117 @@
+{% include "partial/header.html" %}
+<main class="container">
+    <div class="install">
+        <h1>数据源</h1>
+        <table id="list" lay-filter="list"></table>
+    </div>
+</main>
+{% include "partial/footer.html" %}
+<script type="text/html" id="add-form">
+    <div class="layui-form padding-normal" lay-filter="source-form">
+        <div class="layui-form-item">
+            <label class="layui-form-label">数据源地址</label>
+            <div class="layui-input-block">
+                <input type="text" name="url" required  lay-verify="required" placeholder="http开头的网址" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="toolbar">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm layui-btn-primary" lay-event="delete">批量删除</button>
+        <button class="layui-btn layui-btn-sm" lay-event="add">添加新数据源</button>
+    </div>
+</script>
+<script type="text/html" id="control">
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+<script>
+    layui.use(['table', 'layer', 'form'], function(){
+        let table = layui.table;
+        let layer = layui.layer;
+        let form  = layui.form;
+        let $ = layui.$;
+
+        table.render({
+            elem: '#list'
+            ,limit: 20
+            ,url: '/api/article/source/list'
+            ,page: true
+            ,toolbar: '#toolbar'
+            ,cols: [[
+                {type:'checkbox', fixed: 'left'}
+                ,{field: 'id', title: 'ID', width:80}
+                ,{field: 'url', title: '列表连接', edit: 'text', cellMinWidth:300}
+                ,{field: 'error_times', title: '尝试错误次数', edit: 'text', width:150}
+                ,{fixed: 'right', width:150, align:'center', toolbar: '#control'}
+            ]]
+        });
+        table.on('toolbar(list)', function(obj){
+            var checkStatus = table.checkStatus(obj.config.id);
+            switch(obj.event){
+                case 'delete':
+                    var data = checkStatus.data;
+                    layer.confirm('真的删除这些数据源吗？', function(index){
+                        layer.close(index);
+                        for(let i in data) {
+                            let item = data[i];
+                            $.post("/api/article/source/delete", {id: item.id}, function(res) {
+                                layer.msg(res.msg);
+                            }, 'json');
+                        }
+                        setTimeout(function(){
+                            table.reload('list');
+                        }, 2000);
+                    });
+                    break;
+                case 'add':
+                    layer.open({
+                        type: 1,
+                        title: "添加新的数据源",
+                        area: "450px",
+                        content: $("#add-form").html(),
+                        btn: ["确定", "取消"],
+                        yes: function(index){
+                            let data = form.val("source-form");
+                            $.post("/api/article/source/save", data, function(res) {
+                                if(res.code === 0) {
+                                    layer.close(index);
+                                    table.reload('list');
+                                }
+                                layer.msg(res.msg);
+                            }, 'json');
+                        }
+                    })
+                    break;
+            };
+        });
+        table.on('tool(list)', function(obj){
+            let data = obj.data;
+            let layEvent = obj.event;
+            if(layEvent === 'del'){
+                layer.confirm('真的删除该条数据源吗？', function(index){
+                    $.post("/api/article/source/delete", {id: data.id}, function(res) {
+                        if(res.code === 0) {
+                            obj.del();
+                            layer.close(index);
+                        }
+                        layer.msg(res.msg);
+                    }, 'json');
+                });
+            } else if(layEvent === 'edit'){
+                layer.msg("单击需要修改的字段即可修改");
+            }
+        });
+        table.on('edit(list)', function(obj){
+            let data = obj.data;
+            data.error_times = Number(data.error_times);
+            $.post("/api/article/source/save", data, function(res) {
+                if(res.code === 0) {
+                    obj.update(res.data)
+                }
+                layer.msg(res.msg);
+            }, 'json');
+        });
+    });
+</script>

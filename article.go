@@ -1,24 +1,26 @@
 package collector
 
 import (
+	"collector/services"
 	"github.com/jinzhu/gorm"
 	"time"
 )
 
 type Article struct {
-	Id           int `json:"id" gorm:"column:id;type:int(10);unique;unsigned;not null;primary_key;AUTO_INCREMENT"`
+	Id           int    `json:"id" gorm:"column:id;type:int(10);unique;unsigned;not null;primary_key;AUTO_INCREMENT"`
+	SourceId     int    `json:"source_id" gorm:"column:source_id;type:int(11);not null;default:0"`
 	Title        string `json:"title" gorm:"column:title;type:varchar(250);not null;default:''"`
 	Keywords     string `json:"keywords" gorm:"column:keywords;type:varchar(250);not null;default:''"`
 	Description  string `json:"description" gorm:"column:description;type:varchar(250);not null;default:''"`
 	Content      string `json:"content" gorm:"-"`
-	ArticleType  int   `json:"article_type" gorm:"column:article_type;type:tinyint(1);unsigned;not null;default:0"`
+	ArticleType  int    `json:"article_type" gorm:"column:article_type;type:tinyint(1);unsigned;not null;default:0"`
 	OriginUrl    string `json:"origin_url" gorm:"column:origin_url;type:varchar(250);not null;default:''"`
 	Author       string `json:"author" gorm:"column:author;type:varchar(100);not null;default:''"`
-	Views        int   `json:"views" gorm:"column:views;type:int(10);not null;default:0"`
-	Status       int   `json:"status" gorm:"column:status;type:tinyint(1);unsigned;not null;default:0"`
-	CreatedTime  int   `json:"created_time" gorm:"column:created_time;type:int(11);unsigned;not null;default:0"`
-	UpdatedTime  int   `json:"updated_time" gorm:"column:updated_time;type:int(11);unsigned;not null;default:0"`
-	DeletedTime  int   `json:"-" gorm:"column:deleted_time;type:int(11);unsigned;not null;default:0"`
+	Views        int    `json:"views" gorm:"column:views;type:int(10);not null;default:0"`
+	Status       int    `json:"status" gorm:"column:status;type:tinyint(1);unsigned;not null;default:0"`
+	CreatedTime  int    `json:"created_time" gorm:"column:created_time;type:int(11);unsigned;not null;default:0"`
+	UpdatedTime  int    `json:"updated_time" gorm:"column:updated_time;type:int(11);unsigned;not null;default:0"`
+	DeletedTime  int    `json:"-" gorm:"column:deleted_time;type:int(11);unsigned;not null;default:0"`
 	OriginDomain string `json:"-" gorm:"-"`
 	OriginPath   string `json:"-" gorm:"-"`
 	ContentText  string `json:"-" gorm:"-"`
@@ -26,15 +28,15 @@ type Article struct {
 }
 
 type ArticleData struct {
-	Id      int `json:"id" gorm:"column:id;type:int(10);unique;unsigned;not null;primary_key;AUTO_INCREMENT"`
+	Id      int    `json:"id" gorm:"column:id;type:int(10);unique;unsigned;not null;primary_key;AUTO_INCREMENT"`
 	Content string `json:"content" gorm:"column:content;type:longtext;not null;default:''"`
 }
 
 type ArticleSource struct {
-	Id          int `json:"id" gorm:"column:id;type:int(10);unique;unsigned;not null;primary_key;AUTO_INCREMENT"`
-	Url         string `json:"url" gorm:"column:url;type:varchar(250);not null;default:''"`
-	UrlType     int   `json:"url_type" gorm:"column:url_type;type:tinyint(3);not null;default:0"`
-	ErrorTimes  int   `json:"error_times" gorm:"column:error_times;type:int(10);not null;default:0"`
+	Id         int    `json:"id" gorm:"column:id;type:int(10);unique;unsigned;not null;primary_key;AUTO_INCREMENT"`
+	Url        string `json:"url" gorm:"column:url;type:varchar(250);not null;default:''"`
+	UrlType    int    `json:"url_type" gorm:"column:url_type;type:tinyint(3);not null;default:0"`
+	ErrorTimes int    `json:"error_times" gorm:"column:error_times;type:int(10);not null;default:0"`
 }
 
 func (article *Article) Save(db *gorm.DB) error {
@@ -50,6 +52,33 @@ func (article *Article) Save(db *gorm.DB) error {
 		Content: article.Content,
 	}
 	db.Save(&articleData)
+
+	return nil
+}
+
+func (article *Article) Delete() error {
+	db := services.DB
+	if err := db.Delete(&article).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (source *ArticleSource) Save() error {
+	db := services.DB
+	if err := db.Save(&source).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (source *ArticleSource) Delete() error {
+	db := services.DB
+	if err := db.Delete(&source).Error; err != nil {
+		return err
+	}
 
 	return nil
 }

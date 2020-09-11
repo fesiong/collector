@@ -20,7 +20,8 @@
 
 ## 如何安装使用
 * 下载可执行文件  
-  请从Releases 中根据你的操作系统下载最新版的可执行文件，解压后，重命名config.dist.json为config.json，打开config.json，修改mysql部分的配置，填写为你的mysql地址、用户名、密码、数据库信息，导入mysql.sql到填写的数据库中，然后双击运行可执行文件即可开始采集之旅。
+  请从Releases 中根据你的操作系统下载最新版的可执行文件，解压后，然后双击运行可执行文件，在打开的浏览器中的可视化界面，填写数据库信息，完成初始化配置，添加采集源，即可开始采集之旅。  
+  如果你是在服务器端运行，或者程序没有自动打开浏览器，请按命令界面提示，在浏览器输入访问地址，默认的访问地址是 https://127.0.0.1:8088
 * 自助编译  
   先clone代码到本地，本地安装go运行环境，在collector目录下打开cmd/Terminal命令行窗口，执行命。如果你没配置代理的话，还需要新设置go的代理
 ```shell script
@@ -31,87 +32,18 @@ go env -w GOPROXY=https://goproxy.cn,direct
 go mod tidy
 go mod vendor
 go build
+# to linux 
+# CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o collector.linux app/main.go
+# to windows
+# CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o collector.exe app/main.go
+# to mac
+# CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o collector.mac app/main.go
 ```
-编译结束后，配置config。重命名config.dist.json为config.json，打开config.json，修改mysql部分的配置，填写为你的mysql地址、用户名、密码、数据库信息，导入mysql.sql到填写的数据库中，然后双击运行可执行文件即可开始采集之旅。
-
-### 添加待采集文章列表说明
-第一版尚未有可视化界面，因此需要你使用数据库工具打开fe_article_source 表，在里面填充采集列表，只需要将需要采集的列表填写到url字段即可，一行一个。
-
-### config.json配置说明
-```
-{
-  "mysql": { //数据库配置
-    "Database": "collector",
-    "User": "root",
-    "Password": "root",
-    "Charset": "utf8mb4",
-    "Host": "127.0.0.1",
-    "TablePrefix": "fe_",
-    "Port": 3306,
-    "MaxIdleConnections": 1000,
-    "MaxOpenConnections": 100000
-  },
-  "server": { //采集器运行配置
-    "SiteName"    : "万能采集器",
-    "Host"        : "localhost",
-    "Env"         : "development",
-    "Port"        : 8088
-  },
-  "collector": { //采集规则
-    "ErrorTimes": 5, //列表访问错误多少次后抛弃该列表连接
-    "Channels": 5,  //同时使用多少个通道执行
-    "TitleMinLength": 6,  //最小标题长度，小于该长度的会自动放弃
-    "ContentMinLength": 200,  //最小详情长度，小于该长度的会自动放弃
-    "TitleExclude": [  //标题不包含关键词，出现这些关键词的会自动放弃
-      "法律声明",
-      "关于我们",
-      "站点地图"
-    ],
-    "TitleExcludePrefix": [  //标题不包含开头，以这些开头的会自动放弃
-      "404",
-      "403",
-      "NotFound"
-    ],
-    "TitleExcludeSuffix": [  //标题不包含结尾，以这些开头的会自动放弃
-      "网站",
-      "网",
-      "政府",
-      "门户"
-    ],
-    "ContentExclude": [  //内容不包含关键词，出现这些关键词的会自动放弃
-      "ICP备",
-      "政府网站标识码",
-      "以上版本浏览本站",
-      "版权声明",
-      "公网安备"
-    ],
-    "ContentExcludeLine": [  //内容不包含关键词的行，出现这些关键词的行会自动放弃
-      "背景色：",
-      "时间：",
-      "作者：",
-      "qrcode"
-    ]
-  },
-  "content": {  //自动发布设置
-    "AutoPublish": true,  //是否自动发布，true为自动
-    "TableName": "fe_new_article",  //自动发布到的文章表名
-    "IdField": "id",  //文章表的id字段名
-    "TitleField": "title",  //文章表的标题字段名
-    "CreatedTimeField": "created_time",  //文章表的发布时间字段名，时间戳方式
-    "KeywordsField": "keywords",  //文章表的关键词字段名
-    "DescriptionField": "description",  //文章表的描述字段名
-    "AuthorField": "author",  //文章表的作者字段名
-    "ViewsField": "views",  //文章表的浏览量字段名
-    "ContentTableName": "fe_new_article_data",  //如果文章内容表和文章表不是同一个表，则在这里填写指定表面，如果相同，则填写相同的名称
-    "ContentIdField": "id",  //文章内容表的id字段名
-    "ContentField": "content"  //文章内容表或文字表的id字段名
-  }
-}
-```
+编译结束后，运行编译出来的文件，然后双击运行可执行文件，在打开的浏览器中的可视化界面，填写数据库信息，完成初始化配置，添加采集源，即可开始采集之旅。
 
 ## 开发计划
-* 增加可视化添加采集列表连接、查看修改已采集内容操作界面
-* 增加自动发布到远程服务器网站功能
+* 增加可视化添加采集列表连接、查看修改已采集内容操作界面 ✅
+* 增加自动发布到远程服务器网站功能 ✅
 * 增加关键词自动替换(伪原创的一部分)
 * 增加内容自动分段重组功能(待定)
 

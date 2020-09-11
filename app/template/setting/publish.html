@@ -1,0 +1,272 @@
+{% include "partial/header.html" %}
+<main class="container">
+    <div class="install">
+        <h1>自动发布配置</h1>
+        <form class="layui-form" lay-filter="setting-form" onsubmit="return false;">
+            <div class="layui-card">
+                <div class="layui-card-header">基础配置</div>
+                <div class="layui-card-body">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">启用自动发布</label>
+                        <div class="layui-input-block">
+                            <input type="radio" name="auto_publish" value="0" lay-filter="auto_publish" title="不启用" checked="{{setting.AutoPublish == 0}}">
+                            <input type="radio" name="auto_publish" value="1" lay-filter="auto_publish" title="启用本地发布" checked="{{setting.AutoPublish == 1}}">
+                            <input type="radio" name="auto_publish" value="2" lay-filter="auto_publish" title="启用远程发布" checked="{{setting.AutoPublish == 2}}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-card" id="local-publish">
+                <div class="layui-card-header">本地同数据库发布</div>
+                <div class="layui-card-body">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">文章表名称</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="table_name" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">文章内容表名称</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="views_field" placeholder="默认为空，如果你的文章内容表和文章表不在同一个表里，则需要填写" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">内容表ID字段</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="content_id_field" placeholder="默认为空，如果你的文章内容表和文章表不在同一个表里，则需要填写" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-card" id="remote-publish">
+                <div class="layui-card-header">远程发布</div>
+                <div class="layui-card-body">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">发布API地址</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="remote_url" placeholder="接收发布数据的api地址" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">数据提交方式</label>
+                        <div class="layui-input-block">
+                            <input type="radio" name="content_type" value="form" title="Form Data">
+                            <input type="radio" name="content_type" value="urlencode" title="Form Urlencode">
+                            <input type="radio" name="content_type" value="json" title="Json数据流">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">Headers</label>
+                        <div class="layui-input-block">
+                            <div class="tag-input" style="overflow: hidden;" data-type="headers">
+                                <div class="layui-form-mid">键名</div>
+                                <div class="layui-input-inline">
+                                    <input type="text" autocomplete="off" class="layui-input tag-key">
+                                </div>
+                                <div class="layui-form-mid">键值</div>
+                                <div class="layui-input-inline" style="width: 500px;">
+                                    <input type="text" autocomplete="off" placeholder="回车添加" class="layui-input tag-value">
+                                </div>
+                            </div>
+                            <div class="tag-items">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">Cookies</label>
+                        <div class="layui-input-block">
+                            <div class="tag-input" style="overflow: hidden;" data-type="cookies">
+                                <div class="layui-form-mid">键名</div>
+                                <div class="layui-input-inline">
+                                    <input type="text" autocomplete="off" class="layui-input tag-key">
+                                </div>
+                                <div class="layui-form-mid">键值</div>
+                                <div class="layui-input-inline" style="width: 500px;">
+                                    <input type="text" autocomplete="off" placeholder="回车添加" class="layui-input tag-value">
+                                </div>
+                            </div>
+                            <div class="tag-items">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-card" id="field-set">
+                <div class="layui-card-header">字段设置</div>
+                <div class="layui-card-body">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">其他固定字段</label>
+                        <div class="layui-input-block">
+                            <div class="tag-input" style="overflow: hidden;" data-type="extra_fields">
+                                <div class="layui-form-mid">键名</div>
+                                <div class="layui-input-inline">
+                                    <input type="text" autocomplete="off" class="layui-input tag-key">
+                                </div>
+                                <div class="layui-form-mid">键值</div>
+                                <div class="layui-input-inline" style="width: 500px;">
+                                    <input type="text" autocomplete="off" placeholder="特殊：{py}标题首字母,{id}文章id,{pinyin}标题拼音,{time}时间戳,{date}日期" class="layui-input tag-value">
+                                </div>
+                            </div>
+                            <div class="tag-items">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">文章ID字段</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="id_field" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">标题字段</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="title_field" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">发布时间字段</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="created_time_field" placeholder="默认为空" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">关键词字段</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="keywords_field" placeholder="默认为空" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">简介字段</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="description_field" placeholder="默认为空" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">内容字段</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="content_field" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <a class="layui-btn setting-submit">确认修改</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</main>
+{% include "partial/footer.html" %}
+<script type="text/html" id="tag-template">
+    <div class="tag-item layui-btn layui-btn-sm layui-btn-primary" data-type="itemType" data-index="itemIndex">
+        <input type="hidden" name="itemType[]" value="itemTitle" />
+        <span>itemTitle</span>
+        <i class="tag-close layui-icon layui-icon-close"></i>
+    </div>
+</script>
+<script>
+    layui.use(['form', 'layer'], function(){
+        let form = layui.form;
+        let layer = layui.layer;
+        let $ = layui.$;
+        let content = {};
+
+        $.get("/api/publish", function(res){
+            content = res.data;
+            form.val("setting-form", res.data);
+            checkPublishType(res.data.auto_publish);
+            $(".tag-input").each(function(i, item){
+                let type = $(item).data('type');
+                for(let i in content[type]){
+                    let val = content[type][i].key + ":" + content[type][i].value;
+                    $(item).next('.tag-items').append($('#tag-template').html().replaceAll('itemType', type).replaceAll('itemIndex', i).replaceAll('itemTitle', val));
+                }
+            })
+        }, 'json');
+        $(document).on('click', '.tag-close', function(){
+            let type = $(this).parents('.tag-item').data('type');
+            let index = $(this).parents('.tag-item').data('index');
+            content[type].splice(index, 1);
+            $(this).parents('.tag-item').remove();
+        });
+        $('.tag-input').bind('keydown', function (event) {
+            if (event.keyCode === 13){
+                let key = $(this).find('.tag-key').val();
+                let val = $(this).find('.tag-value').val();
+                let type = $(this).data('type');
+                if(!content[type]) {
+                    content[type] = [];
+                }
+                let exists = false;
+                for(let i in content[type]){
+                    if(content[type][i].key === key) {
+                        exists = true;
+                        content[type][i].key = val;
+                    }
+                }
+                if(!exists) {
+                    content[type].push({
+                        key: key,
+                        value: val,
+                    });
+                    $(this).find('.tag-key').val("");
+                    $(this).find('.tag-value').val("");
+                }
+                $(this).next('.tag-items').html("");
+                for(let i in content[type]){
+                    let val = content[type][i].key + ":" + content[type][i].value;
+                    $(this).next('.tag-items').append($('#tag-template').html().replaceAll('itemType', type).replaceAll('itemIndex', i).replaceAll('itemTitle', val));
+                }
+            }
+        });
+        //监听提交
+        $('.setting-submit').click(function(e){
+            let fields = form.val("setting-form");
+            let postData = {};
+            for(let i in fields) {
+                if (i.indexOf('[') !== -1) {
+                    let key = i.replace(/\[\d*\]/, '[]');
+                    if(!postData[key]) {
+                        postData[key] = [];
+                    }
+                    postData[key].push(fields[i]);
+                } else {
+                    postData[i] = fields[i];
+                }
+            }
+
+            postData.auto_publish = Number(postData.auto_publish)
+            $.post("/publish", postData, function (res) {
+                if(res.code === 0) {
+                    layer.alert(res.msg, function(){
+                        window.location.reload();
+                    });
+                } else {
+                    layer.msg(res.msg);
+                }
+            }, 'json');
+            return false;
+        });
+
+        form.on('radio(auto_publish)', function(data){
+            checkPublishType(data.value);
+        });
+        function checkPublishType(value){
+            if(value == 1) {
+                $('#local-publish').removeClass('layui-hide');
+                $('#remote-publish').addClass('layui-hide');
+                $('#field-set').removeClass('layui-hide');
+            } else if(value == 2) {
+                $('#local-publish').addClass('layui-hide');
+                $('#remote-publish').removeClass('layui-hide');
+                $('#field-set').removeClass('layui-hide');
+            } else {
+                $('#local-publish').addClass('layui-hide');
+                $('#remote-publish').addClass('layui-hide');
+                $('#field-set').addClass('layui-hide');
+            }
+        }
+    });
+</script>

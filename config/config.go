@@ -1,74 +1,188 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/gobuffalo/packr/v2"
+	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"regexp"
 	"unicode/utf8"
 )
 
 type configData struct {
-	MySQL mySQLConfig
-	Server serverConfig
-	Collector collectorConfig
-	Content contentConfig
+	MySQL     mySQLConfig     `json:"mysql"`
+	Server    serverConfig    `json:"server"`
+	Collector collectorConfig `json:"collector"`
+	Content   contentConfig   `json:"content"`
 }
 
 var ExecPath string
 
-func initJSON() {
+func InitJSON() {
 	sep := string(os.PathSeparator)
-	ExecPath, _ = os.Getwd()
+	root := filepath.Dir(os.Args[0])
+	ExecPath, _ = filepath.Abs(root)
 	length := utf8.RuneCountInString(ExecPath)
 	lastChar := ExecPath[length-1:]
 	if lastChar != sep {
 		ExecPath = ExecPath + sep
 	}
 
-	bytes, err := ioutil.ReadFile(fmt.Sprintf("%sconfig.json", ExecPath))
-	if err != nil {
-		fmt.Println("ReadFile: ", err.Error())
-		os.Exit(-1)
+	//生成public目录
+	_, err := os.Stat(ExecPath + "public")
+	if err != nil && os.IsNotExist(err) {
+		err = os.Mkdir(ExecPath+"public", os.ModePerm)
+		if err != nil {
+			fmt.Println("无法创建public目录: ", err.Error())
+			os.Exit(-1)
+		}
 	}
 
-	configStr := string(bytes[:])
+	buf, err := ioutil.ReadFile(fmt.Sprintf("%sconfig.json", ExecPath))
+	configStr := ""
+	if err != nil {
+		//文件不存在，使用默认配置
+		box := packr.New("default", ExecPath+"default")
+		configStr, _ = box.FindString("config.json")
+	} else {
+		configStr = string(buf[:])
+	}
 	reg := regexp.MustCompile(`/\*.*\*/`)
 
 	configStr = reg.ReplaceAllString(configStr, "")
-	bytes = []byte(configStr)
+	buf = []byte(configStr)
 
-	if err := json.Unmarshal(bytes, &jsonData); err != nil {
-		fmt.Println("Invalid Config: ", err.Error())
+	if err := json.Unmarshal(buf, &JsonData); err != nil {
+		fmt.Println("配置文件格式有误: ", err.Error())
 		os.Exit(-1)
 	}
 
 	//load Mysql
-	MySQLConfig = jsonData.MySQL
-	url := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local",
-		MySQLConfig.User, MySQLConfig.Password, MySQLConfig.Host, MySQLConfig.Port, MySQLConfig.Database, MySQLConfig.Charset)
-	MySQLConfig.Url = url
+	MySQLConfig = JsonData.MySQL
+	if MySQLConfig.Database != "" {
+		url := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local",
+			MySQLConfig.User, MySQLConfig.Password, MySQLConfig.Host, MySQLConfig.Port, MySQLConfig.Database, MySQLConfig.Charset)
+		MySQLConfig.Url = url
+	}
 
 	//load server
-	ServerConfig = jsonData.Server
+	ServerConfig = JsonData.Server
 	ServerConfig.ExecPath = ExecPath
 
 	//load collector
-	CollectorConfig = jsonData.Collector
+	CollectorConfig = loadCollectorConfig(JsonData.Collector)
 
 	//load content
-	ContentConfig = jsonData.Content
-
-	fmt.Println(MySQLConfig, ServerConfig, CollectorConfig, ContentConfig)
+	ContentConfig = JsonData.Content
 }
 
-var jsonData configData
+var JsonData configData
 var MySQLConfig mySQLConfig
 var ServerConfig serverConfig
 var CollectorConfig collectorConfig
 var ContentConfig contentConfig
 
 func init() {
-	initJSON()
+	InitJSON()
+}
+
+func loadCollectorConfig(collector collectorConfig) collectorConfig {
+	if collector.ErrorTimes == 0 {
+		collector.ErrorTimes = defaultCollectorConfig.ErrorTimes
+	}
+	if collector.Channels == 0 {
+		collector.Channels = defaultCollectorConfig.Channels
+	}
+	if collector.TitleMinLength == 0 {
+		collector.TitleMinLength = defaultCollectorConfig.TitleMinLength
+	}
+	if collector.ContentMinLength == 0 {
+		collector.ContentMinLength = defaultCollectorConfig.ContentMinLength
+	}
+	for _, v := range defaultCollectorConfig.TitleExclude {
+		exists := false
+		for _, vv := range collector.TitleExclude {
+			if vv == v {
+				exists = true
+			}
+		}
+		if !exists {
+			collector.TitleExclude = append(collector.TitleExclude, v)
+		}
+	}
+	for _, v := range defaultCollectorConfig.TitleExcludePrefix {
+		exists := false
+		for _, vv := range collector.TitleExcludePrefix {
+			if vv == v {
+				exists = true
+			}
+		}
+		if !exists {
+			collector.TitleExcludePrefix = append(collector.TitleExcludePrefix, v)
+		}
+	}
+	for _, v := range defaultCollectorConfig.TitleExcludeSuffix {
+		exists := false
+		for _, vv := range collector.TitleExcludeSuffix {
+			if vv == v {
+				exists = true
+			}
+		}
+		if !exists {
+			collector.TitleExcludeSuffix = append(collector.TitleExcludeSuffix, v)
+		}
+	}
+	for _, v := range defaultCollectorConfig.ContentExclude {
+		exists := false
+		for _, vv := range collector.ContentExclude {
+			if vv == v {
+				exists = true
+			}
+		}
+		if !exists {
+			collector.ContentExclude = append(collector.ContentExclude, v)
+		}
+	}
+	for _, v := range defaultCollectorConfig.ContentExcludeLine {
+		exists := false
+		for _, vv := range collector.ContentExcludeLine {
+			if vv == v {
+				exists = true
+			}
+		}
+		if !exists {
+			collector.ContentExcludeLine = append(collector.ContentExcludeLine, v)
+		}
+	}
+
+	return collector
+}
+
+func WriteConfig() error {
+	//将现有配置写回文件
+	configFile, err := os.OpenFile(fmt.Sprintf("%sconfig.json", ExecPath), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	if err != nil {
+		return err
+	}
+
+	defer configFile.Close()
+
+	buff := &bytes.Buffer{}
+
+	buf, err := json.MarshalIndent(JsonData, "", "\t")
+	if err != nil {
+		return err
+	}
+	buff.Write(buf)
+
+	_, err = io.Copy(configFile, buff)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

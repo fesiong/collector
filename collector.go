@@ -3,12 +3,16 @@ package collector
 import (
 	"collector/config"
 	"collector/library"
-	"collector/service"
+	"collector/services"
 	"fmt"
+	"github.com/Chain-Zhang/pinyin"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/parnurzeal/gorequest"
+	"github.com/polaris1119/keyword"
 	"github.com/robfig/cron/v3"
 	"golang.org/x/net/html/charset"
+	"log"
+	"net/http"
 	"net/url"
 	"path/filepath"
 	"regexp"
@@ -19,6 +23,14 @@ import (
 	"unicode/utf8"
 )
 
+type RequestData struct {
+	Body   string
+	Domain string
+	Scheme string
+	IP     string
+	Server string
+}
+
 var waitGroup sync.WaitGroup
 var ch chan string
 
@@ -26,39 +38,25 @@ func Crond() {
 	//一次使用几个通道
 	ch = make(chan string, config.CollectorConfig.Channels)
 
+	keyword.Extractor.Init(keyword.DefaultProps, true, config.ExecPath + "dictionary.txt")
+
 	fmt.Println("collection")
-	//publishData := map[string]string{}
-	//publishData[config.ContentConfig.TitleField] = "这是一个标题"
-	//publishData[config.ContentConfig.KeywordsField] = "这是一个关键词"
-	//publishDataKeys := make([]string, len(publishData))
-	//publishDataValues := make([]string, len(publishData))
-	//j := 0
-	//for k,v := range publishData {
-	//	publishDataKeys[j] = k
-	//	publishDataValues[j] = fmt.Sprintf("'%s'", v)
-	//	j++
-	//}
-	//
-	////var id struct{
-	////	Id int
-	////}
-	//inserId := int64(0)
-	//result, err := services.DB.DB().Exec(fmt.Sprintf("INSERT INTO `%s` (%s)VALUES(%s)", config.ContentConfig.TableName, strings.Join(publishDataKeys, ","), strings.Join(publishDataValues, ",")))
-	//if err == nil {
-	//	inserId, err = result.LastInsertId()
-	//	if config.ContentConfig.TableName != config.ContentConfig.ContentTableName {
-	//		dd := services.DB.Exec(fmt.Sprintf("INSERT INTO `%s` (%s, %s)VALUES(?, ?)", config.ContentConfig.ContentTableName, config.ContentConfig.ContentIdField, config.ContentConfig.ContentField), inserId, "这些一些content内容")
-	//		fmt.Println(dd.RowsAffected)
-	//	}
-	//}
-	//
-	//fmt.Println(inserId,err, publishData, publishDataKeys, publishDataValues)
+
 	//link := &Article{
-	//	OriginUrl: "https://mbd.baidu.com/newspage/data/landingsuper?context=%7B%22nid%22%3A%22news_9278787920922000269%22%7D&n_type=0&p_from=1",
+	//	OriginUrl: "http://scitech.people.com.cn/n1/2020/0910/c1007-31856039.html",
 	//}
-	//
-	//_ = CollectDetail(link)
-	//fmt.Println(link.Title, "--------", link.Content)
+	//CollectDetail(link)
+	//log.Println(link.Title, "--------", link.Content)
+	//var sources []ArticleSource
+	//services.DB.Model(ArticleSource{}).Find(&sources)
+	//for _, source := range sources {
+	//	waitGroup.Add(1)
+	//	link := &Article{
+	//		OriginUrl: source.Url,
+	//	}
+	//	go CollectDetail(link)
+	//}
+	//waitGroup.Wait()
 	//os.Exit(0)
 	//1小时运行一次，采集地址，加入到地址池
 	//每分钟运行一次，检查是否有需要采集的文章s
@@ -71,11 +69,13 @@ func Crond() {
 	//启动的时候，先执行一遍
 	go CollectListTask()
 	go CollectDetailTask()
-
-	select {}
 }
 
 func CollectListTask() {
+	if services.DB == nil {
+		return
+	}
+	fmt.Println("collect list")
 	db := services.DB
 	var articleSources []ArticleSource
 	err := db.Model(ArticleSource{}).Where("`error_times` < ?", config.CollectorConfig.ErrorTimes).Find(&articleSources).Error
@@ -93,6 +93,9 @@ func CollectListTask() {
 }
 
 func CollectDetailTask() {
+	if services.DB == nil {
+		return
+	}
 	fmt.Println("collect detail")
 	//检查article的地址
 	var articleList []Article
@@ -119,6 +122,7 @@ func GetArticleLinks(v ArticleSource) {
 		for _, article := range articleList {
 			//先检查数据库里有没有，没有的话，就抓回来
 			article.CreatedTime = int(time.Now().Unix())
+			article.SourceId = v.Id
 			article.ArticleType = v.UrlType
 			article.Status = 0
 			db.Model(Article{}).Where(Article{OriginUrl: article.OriginUrl}).FirstOrCreate(&article)
@@ -183,32 +187,72 @@ func GetArticleDetail(v Article) {
 	article := v
 	fmt.Println(status, v.Title, v.OriginUrl)
 	article.Save(db)
-	//如果配置了自动发布，则将它发布到指定表中
-	if config.ContentConfig.AutoPublish {
-		publishData := map[string]string{
-			config.ContentConfig.TitleField: article.Title,
-		}
-		if config.ContentConfig.KeywordsField != "" {
-			publishData[config.ContentConfig.KeywordsField] = article.Keywords
-		}
-		if config.ContentConfig.DescriptionField != "" {
-			publishData[config.ContentConfig.DescriptionField] = article.Description
-		}
-		if config.ContentConfig.CreatedTimeField != "" {
-			publishData[config.ContentConfig.CreatedTimeField] = strconv.Itoa(article.CreatedTime)
-		}
-		if config.ContentConfig.AuthorField != "" {
-			publishData[config.ContentConfig.AuthorField] = article.Author
-		}
-		if config.ContentConfig.ViewsField != "" {
-			publishData[config.ContentConfig.ViewsField] = strconv.Itoa(article.Views)
-		}
-		if config.ContentConfig.TableName == config.ContentConfig.ContentTableName || config.ContentConfig.ContentTableName == "" {
-			if config.ContentConfig.ContentField != "" {
-				publishData[config.ContentConfig.ContentField] = article.Content
-			}
-		}
 
+	AutoPublish(&article)
+}
+
+func AutoPublish(article *Article){
+	if config.ContentConfig.AutoPublish == 0 || article.Status != 1 {
+		return
+	}
+	publishData := map[string]string{
+		config.ContentConfig.TitleField: article.Title,
+	}
+	if config.ContentConfig.KeywordsField != "" {
+		publishData[config.ContentConfig.KeywordsField] = article.Keywords
+	}
+	if config.ContentConfig.DescriptionField != "" {
+		publishData[config.ContentConfig.DescriptionField] = article.Description
+	}
+	if config.ContentConfig.CreatedTimeField != "" {
+		publishData[config.ContentConfig.CreatedTimeField] = strconv.Itoa(article.CreatedTime)
+	}
+	if config.ContentConfig.AuthorField != "" {
+		publishData[config.ContentConfig.AuthorField] = article.Author
+	}
+	if config.ContentConfig.ViewsField != "" {
+		publishData[config.ContentConfig.ViewsField] = strconv.Itoa(article.Views)
+	}
+	if config.ContentConfig.TableName == config.ContentConfig.ContentTableName || config.ContentConfig.ContentTableName == "" || config.ContentConfig.AutoPublish == 2 {
+		if config.ContentConfig.ContentField != "" {
+			publishData[config.ContentConfig.ContentField] = article.Content
+		}
+	}
+	if len(config.ContentConfig.ExtraFields) > 0 {
+		for _, v := range config.ContentConfig.ExtraFields {
+			value := v.Value
+			if v.Value == "{id}" {
+				//获取id
+				value = strconv.Itoa(article.Id)
+			} else if v.Value == "{py}" {
+				//获取标题首字母
+				str, err := pinyin.New(article.Title).Split("-").Mode(pinyin.WithoutTone).Convert()
+				if err == nil {
+					value = ""
+					strArr := strings.Split(str, "-")
+					for _, v := range strArr {
+						value += string(v[0])
+					}
+				}
+			} else if v.Value == "{pinyin}" {
+				//获取标题拼音
+				str, err := pinyin.New(article.Title).Split("").Mode(pinyin.WithoutTone).Convert()
+				if err == nil {
+					value = str
+				}
+			} else if v.Value == "{time}" {
+				//获取标题首字母
+				value = strconv.Itoa(int(time.Now().Unix()))
+			} else if v.Value == "{date}" {
+				//获取标题首字母
+				value = time.Now().Format("2006-01-02")
+			}
+			publishData[v.Key] = value
+		}
+	}
+
+	if config.ContentConfig.AutoPublish == 1 {
+		//本地发布
 		publishDataKeys := make([]string, len(publishData))
 		publishDataValues := make([]string, len(publishData))
 		j := 0
@@ -226,37 +270,53 @@ func GetArticleDetail(v Article) {
 				services.DB.Exec(fmt.Sprintf("INSERT INTO `%s` (%s, %s)VALUES(?, ?)", config.ContentConfig.ContentTableName, config.ContentConfig.ContentIdField, config.ContentConfig.ContentField), insertId, article.Content)
 			}
 		}
+	} else if config.ContentConfig.AutoPublish == 2 && config.ContentConfig.RemoteUrl != "" {
+		//headers
+		sg := gorequest.New().Timeout(10*time.Second).Post(config.ContentConfig.RemoteUrl)
+		if config.ContentConfig.ContentType == "json" {
+			sg = sg.Set("Content-Type", "multipart/form-data")
+		} else if config.ContentConfig.ContentType == "urlencode" {
+			sg = sg.Set("Content-Type", "application/x-www-form-urlencoded")
+		} else {
+			sg = sg.Set("Content-Type", "application/json")
+		}
+		if len(config.ContentConfig.Headers) > 0 {
+			for _, v := range config.ContentConfig.Headers {
+				sg = sg.Set(v.Key, v.Value)
+			}
+		}
+		if len(config.ContentConfig.Cookies) > 0 {
+			urlInfo, _ := url.Parse(config.ContentConfig.RemoteUrl)
+			for _, v := range config.ContentConfig.Cookies {
+				cookie := &http.Cookie{
+					Name:       v.Key,
+					Value:      v.Value,
+					Path:       "/",
+					Domain:     urlInfo.Hostname(),
+					Expires:    time.Now().Add(86400 * time.Second),
+				}
+				sg = sg.AddCookie(cookie)
+			}
+		}
+		//不接收处理结果
+		resp, _, errs := sg.SendMap(publishData).End()
+		if len(errs) > 0 {
+			fmt.Println(errs)
+			return
+		}
+		defer resp.Body.Close()
+		log.Println(resp.Status)
 	}
 }
 
 func CollectLinks(link string) ([]Article, error) {
-	resp, body, errs := gorequest.New().Timeout(5 * time.Second).Get(link).End()
-	if errs != nil {
-		fmt.Println(errs)
-		return nil, errs[0]
+	requestData, err := Request(link)
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
-	defer resp.Body.Close()
-	//检查网站编码，并转成uft8
-	var htmlEncode string
-	//先判断标识
-	reg := regexp.MustCompile(`(?i:)charset="?([a-z0-9\-]*)`)
-	match := reg.FindStringSubmatch(body)
-	if len(match) > 1 {
-		htmlEncode = strings.ToLower(match[1])
-	}
-	//再判断标题
-	if htmlEncode == "" {
-		reg := regexp.MustCompile(`(?i:)<title[^>]*>(.*?)<\/title>`)
-		match := reg.FindStringSubmatch(body)
-		if len(match) > 1 {
-			title := match[1]
-			_, htmlEncode, _ = charset.DetermineEncoding([]byte(title), "")
-		}
-	}
-	if htmlEncode == "gb2312" || htmlEncode == "gbk" || htmlEncode == "big5" {
-		body = library.ConvertToString(body, "gbk", "utf-8")
-	}
-	htmlR := strings.NewReader(body)
+
+	htmlR := strings.NewReader(requestData.Body)
 	doc, err := goquery.NewDocumentFromReader(htmlR)
 	if err != nil {
 		return nil, err
@@ -347,44 +407,18 @@ func replaceDot(currUrl string, baseUrl string) string {
 }
 
 func CollectDetail(article *Article) error {
-	resp, body, errs := gorequest.New().Timeout(5 * time.Second).Get(article.OriginUrl).End()
-	if errs != nil {
-		return errs[0]
-	}
-	defer resp.Body.Close()
-	//检查网站编码，并转成uft8
-	var htmlEncode string
-	//先尝试读取charset
-	contentType := strings.ToLower(resp.Header.Get("Content-Type"))
-	if contentType == "" {
-		reg := regexp.MustCompile(`(?i)charset=["']?([a-z0-9\-]+)`)
-		match := reg.FindStringSubmatch(body)
-		if len(match) > 1 {
-			htmlEncode = strings.ToLower(match[1])
-			if htmlEncode != "utf-8" && htmlEncode != "utf8" {
-				body = library.ConvertToString(body, "gbk", "utf-8")
-			}
-		} else {
-			reg = regexp.MustCompile(`(?is)<title[^>]*>(.*?)<\/title>`)
-			match = reg.FindStringSubmatch(body)
-			if len(match) > 1 {
-				aa := match[1]
-				_, htmlEncode, _ = charset.DetermineEncoding([]byte(aa), "")
-				if htmlEncode != "utf-8" {
-					body = library.ConvertToString(body, "gbk", "utf-8")
-				}
-			}
-		}
-	} else if !strings.Contains(contentType, "utf-8") {
-		body = library.ConvertToString(body, "gbk", "utf-8")
+	requestData, err := Request(article.OriginUrl)
+	if err != nil {
+		log.Println(err)
+		return err
 	}
 	//先删除一些不必要的标签
 	re, _ := regexp.Compile("\\<style[\\S\\s]+?\\</style\\>")
-	body = re.ReplaceAllString(body, "")
+	requestData.Body = re.ReplaceAllString(requestData.Body, "")
 	re, _ = regexp.Compile("\\<script[\\S\\s]+?\\</script\\>")
-	body = re.ReplaceAllString(body, "")
+	requestData.Body = re.ReplaceAllString(requestData.Body, "")
 
-	htmlR := strings.NewReader(body)
+	htmlR := strings.NewReader(requestData.Body)
 	doc, err := goquery.NewDocumentFromReader(htmlR)
 	if err != nil {
 		return err
@@ -395,9 +429,9 @@ func CollectDetail(article *Article) error {
 
 	//如果是百度百科地址，单独处理
 	if strings.Contains(article.OriginUrl, "baike.baidu.com") {
-		article.ParseBaikeDetail(doc, body)
+		article.ParseBaikeDetail(doc, requestData.Body)
 	} else {
-		article.ParseNormalDetail(doc, body)
+		article.ParseNormalDetail(doc, requestData.Body)
 	}
 	nameRune := []rune(article.Description)
 	curLen := len(nameRune)
@@ -422,6 +456,9 @@ func (article *Article) ParseBaikeDetail(doc *goquery.Document, body string) {
 	match = reg.FindStringSubmatch(body)
 	if len(match) > 1 {
 		article.Keywords = match[1]
+	} else if article.Title != "" {
+		keywords := GetKeywords(article.Title, 5)
+		article.Keywords = strings.Join(keywords, ",")
 	}
 
 	doc.Find(".edit-icon").Remove()
@@ -436,6 +473,11 @@ func (article *Article) ParseBaikeDetail(doc *goquery.Document, body string) {
 
 func (article *Article) ParseNormalDetail(doc *goquery.Document, body string) {
 	article.ParseTitle(doc, body)
+
+	if article.Title != "" {
+		keywords := GetKeywords(article.Title, 5)
+		article.Keywords = strings.Join(keywords, ",")
+	}
 
 	//尝试获取正文内容
 	article.ParseContent(doc, body)
@@ -523,6 +565,7 @@ func (article *Article) ParseTitle(doc *goquery.Document, body string) {
 		}
 	}
 
+	log.Println(len(title), title)
 	if title == "" {
 		//获取title标签
 		//title = doc.Find("#title,.title,.bt,.articleTit").First().Text()
@@ -555,7 +598,7 @@ func (article *Article) ParseTitle(doc *goquery.Document, body string) {
 		}
 	}
 
-	title = strings.Replace(strings.Replace(strings.TrimSpace(title), " ", "", -1), "\n", "", -1)
+	title = strings.Replace(strings.Replace(strings.TrimSpace(title), "\t", "", -1), "\n", " ", -1)
 	title = strings.Replace(title, "<br>", "", -1)
 	title = strings.Replace(title, "<br/>", "", -1)
 	//只要第一个
@@ -753,6 +796,79 @@ func (article *Article) ReplaceHref(src string) string {
 	return src
 }
 
+/**
+ * 请求域名返回数据
+ */
+func Request(urlPath string) (*RequestData, error) {
+	resp, body, errs := gorequest.New().Timeout(90 * time.Second).Get(urlPath).End()
+	if len(errs) > 0 {
+		//如果是https,则尝试退回http请求
+		if strings.HasPrefix(urlPath, "https") {
+			urlPath = strings.Replace(urlPath, "https://", "http://", 1)
+			return Request(urlPath)
+		}
+		return nil, errs[0]
+	}
+	defer resp.Body.Close()
+	contentType := strings.ToLower(resp.Header.Get("Content-Type"))
+	var htmlEncode string
+
+	if strings.Contains(contentType, "gbk") || strings.Contains(contentType, "gb2312") || strings.Contains(contentType, "gb18030") || strings.Contains(contentType, "windows-1252") {
+		htmlEncode = "gb18030"
+	} else if strings.Contains(contentType, "big5") {
+		htmlEncode = "big5"
+	} else if strings.Contains(contentType, "utf-8") {
+		htmlEncode = "utf-8"
+	}
+	log.Println(contentType)
+	if htmlEncode == "" {
+		//先尝试读取charset
+		reg := regexp.MustCompile(`(?is)<meta[^>]*charset\s*=["']?\s*([A-Za-z0-9\-]+)`)
+		match := reg.FindStringSubmatch(body)
+		if len(match) > 1 {
+			contentType = strings.ToLower(match[1])
+			log.Println(contentType)
+			if strings.Contains(contentType, "gbk") || strings.Contains(contentType, "gb2312") || strings.Contains(contentType, "gb18030") || strings.Contains(contentType, "windows-1252") {
+				htmlEncode = "gb18030"
+			} else if strings.Contains(contentType, "big5") {
+				htmlEncode = "big5"
+			} else if strings.Contains(contentType, "utf-8") {
+				htmlEncode = "utf-8"
+			}
+		}
+		if htmlEncode == "" {
+			reg = regexp.MustCompile(`(?is)<title[^>]*>(.*?)<\/title>`)
+			match = reg.FindStringSubmatch(body)
+			if len(match) > 1 {
+				aa := match[1]
+				_, contentType, _ = charset.DetermineEncoding([]byte(aa), "")
+				log.Println(contentType)
+				htmlEncode = strings.ToLower(htmlEncode)
+				if strings.Contains(contentType, "gbk") || strings.Contains(contentType, "gb2312") || strings.Contains(contentType, "gb18030") || strings.Contains(contentType, "windows-1252") {
+					htmlEncode = "gb18030"
+				} else if strings.Contains(contentType, "big5") {
+					htmlEncode = "big5"
+				} else if strings.Contains(contentType, "utf-8") {
+					htmlEncode = "utf-8"
+				}
+			}
+		}
+	}
+	if htmlEncode != "" && htmlEncode != "utf-8" {
+		body = library.ConvertToString(body, htmlEncode, "utf-8")
+	}
+	log.Println(htmlEncode)
+
+	requestData := RequestData{
+		Body:   body,
+		Domain: resp.Request.Host,
+		Scheme: resp.Request.URL.Scheme,
+		Server: resp.Header.Get("Server"),
+	}
+
+	return &requestData, nil
+}
+
 func InArray(need string, needArray []string) bool {
 	for _, v := range needArray {
 		if need == v {
@@ -791,4 +907,20 @@ func HasContain(need string, needArray []string) bool {
 	}
 
 	return false
+}
+
+func GetKeywords(content string, num int) []string {
+	lenth := 2
+	keywords := keyword.Extractor.Extract(content, 1000)
+	var words []string
+	for _, v := range keywords {
+		if utf8.RuneCountInString(v) >= lenth {
+			words = append(words, v)
+		}
+	}
+
+	if len(words) > num {
+		return words[:num]
+	}
+	return words
 }

@@ -1,0 +1,173 @@
+{% include "partial/header.html" %}
+<main class="container">
+    <div class="install">
+        <h1>采集配置</h1>
+        <form class="layui-form" onsubmit="return false;" lay-filter="setting-form">
+            <div class="layui-card">
+                <div class="layui-card-header">采集源设置</div>
+                <div class="layui-card-body">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">最大重试次数</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="error_times" value="" placeholder="默认5" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">同时执行数量</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="channels" value="" placeholder="默认5" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-card">
+                <div class="layui-card-header">采集标题设置</div>
+                <div class="layui-card-body">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">标题最少字数</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="title_min_length" value="" placeholder="默认6" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">不包含关键词</label>
+                        <div class="layui-input-block">
+                            <input type="text" data-type="title_exclude" value="" autocomplete="off" placeholder="回车添加" class="layui-input tag-input">
+                            <div class="tag-items">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">不包含特定前缀</label>
+                        <div class="layui-input-block">
+                            <input type="text" data-type="title_exclude_prefix" value="" placeholder="回车添加" autocomplete="off" class="layui-input tag-input">
+                            <div class="tag-items">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">不包含特定后缀</label>
+                        <div class="layui-input-block">
+                            <input type="text" data-type="title_exclude_suffix" value="" placeholder="回车添加" autocomplete="off" class="layui-input tag-input">
+                            <div class="tag-items">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-card">
+                <div class="layui-card-header">采集内容设置</div>
+                <div class="layui-card-body">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">内容最少字数</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="content_min_length" value="" placeholder="默认200" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">不包含关键词段</label>
+                        <div class="layui-input-block">
+                            <input type="text" data-type="content_exclude" value="" placeholder="回车添加" autocomplete="off" class="layui-input tag-input">
+                            <div class="tag-items">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">不包含关键词行</label>
+                        <div class="layui-input-block">
+                            <input type="text" data-type="content_exclude_line" placeholder="回车添加" autocomplete="off" class="layui-input tag-input">
+                            <div class="tag-items">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <a class="layui-btn setting-submit">确认修改</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</main>
+{% include "partial/footer.html" %}
+<script type="text/html" id="tag-template">
+    <div class="tag-item layui-btn layui-btn-sm layui-btn-primary" data-type="itemType" data-index="itemIndex">
+        <input type="hidden" name="itemType[]" value="itemTitle" />
+        <span>itemTitle</span>
+        <i class="tag-close layui-icon layui-icon-close"></i>
+    </div>
+</script>
+<script>
+    layui.use(['form', 'layer'], function(){
+        let form = layui.form;
+        let layer = layui.layer;
+        let $ = layui.$;
+        let collector = {};
+
+        $.get("/api/setting", function(res){
+            collector = res.data;
+            form.val("setting-form", collector);
+            $(".tag-input").each(function(i, item){
+                let type = $(item).data('type');
+                for(let i in collector[type]){
+                    $(item).next('.tag-items').append($('#tag-template').html().replaceAll('itemType', type).replaceAll('itemIndex', i).replaceAll('itemTitle', collector[type][i]));
+                }
+            })
+        }, 'json');
+        $(document).on('click', '.tag-close', function(){
+            let type = $(this).parents('.tag-item').data('type');
+            let index = $(this).parents('.tag-item').data('index');
+            collector[type].splice(index, 1);
+            $(this).parents('.tag-item').remove();
+        });
+        $('.tag-input').bind('keydown', function (event) {
+            if (event.keyCode === 13){
+                let val = $(this).val();
+                let type = $(this).data('type');
+                if(!collector[type]) {
+                    collector[type] = [];
+                }
+                let exists = false;
+                for(let i in collector[type]){
+                    if(collector[type][i] === val) {
+                        exists = true;
+                    }
+                }
+                if(!exists) {
+                    collector[type].push(val);
+                    $(this).next('.tag-items').append($('#tag-template').html().replaceAll('itemType', type).replaceAll('itemIndex', i).replaceAll('itemTitle', val));
+                    $(this).val("");
+                }
+            }
+        });
+        //监听提交
+        $('.setting-submit').click(function(e){
+            let fields = form.val("setting-form");
+            let postData = {};
+            postData.error_times = Number(fields.error_times)
+            postData.channels = Number(fields.channels)
+            postData.title_min_length = Number(fields.title_min_length)
+            postData.content_min_length = Number(fields.content_min_length)
+            for(let i in fields) {
+                if (i.indexOf('[') !== -1) {
+                    let key = i.replace(/\[\d*\]/, '[]');
+                    if(!postData[key]) {
+                        postData[key] = [];
+                    }
+                    postData[key].push(fields[i]);
+                }
+            }
+            $.post("/setting", postData, function (res) {
+                if(res.code === 0) {
+                    layer.alert(res.msg, function(){
+                        window.location.reload();
+                    });
+                } else {
+                    layer.msg(res.msg);
+                }
+            }, 'json');
+            return false;
+        });
+    });
+</script>

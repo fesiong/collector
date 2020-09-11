@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charSet="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1"/>
+    <meta name="applicable-device" content="mobile">
+    <title>网站文章万能采集器</title>
+    <link href="https://www.layuicdn.com/layui/css/layui.css" rel="stylesheet">
+    <style>
+        body{
+            box-sizing: border-box;
+            background-color: #f5f6f7;
+        }
+        .header{
+            height: 52px;
+            line-height: 52px;
+            text-align: center;
+            z-index: 1234;
+            -webkit-user-select: none;
+            user-select: none;
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-pack: justify;
+            -ms-flex-pack: justify;
+            justify-content: space-between;
+            -webkit-box-align: center;
+            -webkit-align-items: center;
+            -ms-flex-align: center;
+            align-items: center;
+            padding: 0 16px;
+            margin-bottom: 20px;
+        }
+        .header:after{
+            content: "";
+            height: 1px;
+            width: 100%;
+            bottom: -1px;
+            right: 0;
+            border-bottom: 1px solid rgba(103, 111, 125, .1);
+            position: absolute;
+            transform: scaleY(.5);
+            -webkit-transform: scaleY(.5);
+        }
+        .tabbar{
+            height: 50px;
+            width: 100%;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .tabbar .tabbar-inner{
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: flex;
+            height: 50px;
+            width: 100%;
+        }
+        .tabbar:before{
+            content: "";
+            height: 1px;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            right: auto;
+            bottom: auto;
+            left: 0;
+            border-top: 1px solid #EFF0F2;
+            transform: scaleY(.5);
+            -webkit-transform: scaleY(.5);
+        }
+
+        .tabbar .tabbar-item{
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-flex: 1;
+            -webkit-flex: 1;
+            flex: 1;
+            -webkit-box-orient: vertical;
+            -webkit-box-direction: normal;
+            -webkit-flex-direction: column;
+            flex-direction: column;
+            -webkit-box-align: center;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-box-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            color: #111;
+            font-size: 16px;
+            line-height: 1;
+            position: relative;
+        }
+        .tabbar .tabbar-item a{
+            display: block;
+            width: 100%;
+            text-align: center;
+        }
+        .container{
+            background-color: #ffffff;
+            box-shadow: 0 1px 5px 0 rgba(0,0,0, 0.1);
+            width: 100%;
+            max-width: 1020px;
+            margin: 0 auto;
+        }
+        .footer{
+            margin-top: 20px;
+            font-size: 10px;
+            padding: 28px 16px 46px;
+            color: #B3B7BE;
+            position: relative;
+        }
+        .footer a{
+            display: inline-block;
+            padding: 0 8px 0 0;
+            color: #20488F;
+            font-size: 12px;
+        }
+        .footer p{
+            margin-top: 4px;
+        }
+        .install{
+            padding: 20px;
+        }
+        .install h1{
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .index {
+            position: relative;
+            padding: 0 15px;
+        }
+        .padding-normal {
+            padding: 20px;
+        }
+        .layui-form-label{
+            width: 110px;
+        }
+        .layui-input-block{
+            margin-left: 140px;
+        }
+        .layadmin-dataview {
+            height: 332px!important;
+        }
+        .layadmin-carousel {
+            background-color: #fff;
+        }
+        .layadmin-carousel .layui-carousel-ind {
+             position: absolute;
+             top: -41px;
+             text-align: right;
+        }
+        .layadmin-carousel .layui-carousel-ind ul {
+             background: 0 0;
+         }
+        .layadmin-carousel .layui-carousel-ind li.layui-this {
+            background-color: #999;
+        }
+        .layadmin-carousel .layui-carousel-ind li {
+            background-color: #e2e2e2;
+        }
+        .tag-items .layui-btn {
+            padding-right: 0;
+            cursor: default;
+            margin-top: 10px;
+        }
+        .tag-items .layui-btn .tag-close {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header class="header">
+        <div class="tabbar">
+            <ul class="tabbar-inner">
+                <li class="tabbar-item{% if webInfo.TabBar == 'home' %} active{% endif %}">
+                    <a href="/" rel="nofollow">首页</a>
+                </li>
+                <li class="tabbar-item{% if webInfo.TabBar == 'news' %} active{% endif %}">
+                    <a href="/source">采集源</a>
+                </li>
+                <li class="tabbar-item{% if webInfo.TabBar == 'policy' %} active{% endif %}">
+                    <a href="/article">采集的文章</a>
+                </li>
+                <li class="tabbar-item{% if webInfo.TabBar == 'region' %} active{% endif %}">
+                    <a href="/keywords">关键词库</a>
+                </li>
+                <li class="tabbar-item{% if webInfo.TabBar == 'region' %} active{% endif %}">
+                    <a href="/setting">采集配置</a>
+                </li>
+                <li class="tabbar-item{% if webInfo.TabBar == 'region' %} active{% endif %}">
+                    <a href="/publish">自动发布配置</a>
+                </li>
+            </ul>
+        </div>
+    </header>
+</div>
