@@ -135,7 +135,7 @@
                     }
                 }
                 if(!exists) {
-                    collector[type].push(val);
+                    let i = collector[type].push(val);
                     $(this).next('.tag-items').append($('#tag-template').html().replace(/itemType/g, type).replace(/itemIndex/g, i).replace(/itemTitle/g, val));
                     $(this).val("");
                 }
