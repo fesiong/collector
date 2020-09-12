@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"collector"
 	"collector/app/provider"
 	"collector/app/request"
 	"collector/config"
+	"collector/core"
 	"github.com/kataras/iris/v12"
 )
 
@@ -34,9 +34,9 @@ func ArticleListApi(ctx iris.Context) {
 	}
 
 	ctx.JSON(iris.Map{
-		"code": config.StatusOK,
-		"msg":  "",
-		"data": articleList,
+		"code":  config.StatusOK,
+		"msg":   "",
+		"data":  articleList,
 		"count": total,
 	})
 }
@@ -51,7 +51,7 @@ func ArticleDeleteApi(ctx iris.Context) {
 		return
 	}
 
-	article , err := provider.GetArticleById(req.ID)
+	article, err := provider.GetArticleById(req.ID)
 	if err != nil {
 		ctx.JSON(iris.Map{
 			"code": config.StatusFailed,
@@ -89,9 +89,9 @@ func ArticleSourceListApi(ctx iris.Context) {
 	}
 
 	ctx.JSON(iris.Map{
-		"code": config.StatusOK,
-		"msg":  "",
-		"data": sourceList,
+		"code":  config.StatusOK,
+		"msg":   "",
+		"data":  sourceList,
 		"count": total,
 	})
 }
@@ -106,7 +106,7 @@ func ArticleSourceDeleteApi(ctx iris.Context) {
 		return
 	}
 
-	source , err := provider.GetArticleSourceById(req.ID)
+	source, err := provider.GetArticleSourceById(req.ID)
 	if err != nil {
 		ctx.JSON(iris.Map{
 			"code": config.StatusFailed,
@@ -140,7 +140,7 @@ func ArticleSourceSaveApi(ctx iris.Context) {
 		})
 		return
 	}
-	var source *collector.ArticleSource
+	var source *core.ArticleSource
 	if req.ID > 0 {
 		source, err = provider.GetArticleSourceById(req.ID)
 		if err != nil {
@@ -159,7 +159,7 @@ func ArticleSourceSaveApi(ctx iris.Context) {
 			})
 			return
 		}
-		source = &collector.ArticleSource{}
+		source = &core.ArticleSource{}
 		source.Url = req.Url
 	}
 

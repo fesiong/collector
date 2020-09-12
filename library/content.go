@@ -12,4 +12,3 @@ func ConvertToString(src string, srcCode string, tagCode string) string {
 	result := string(cdata)
 	return result
 }
-

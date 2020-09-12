@@ -1,6 +1,6 @@
 // +build windows
 
-package collector
+package main
 
 import "os"
 

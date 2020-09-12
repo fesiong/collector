@@ -1,7 +1,6 @@
 package main
 
 import (
-	"collector"
 	"collector/app/bootstrap"
 	"collector/config"
 	"fmt"
@@ -17,11 +16,11 @@ func main() {
 }
 
 func listenSignal() {
-	if len(collector.NotarySupportedSignals) == 0 {
+	if len(NotarySupportedSignals) == 0 {
 		return
 	}
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, collector.NotarySupportedSignals...)
+	signal.Notify(sigs, NotarySupportedSignals...)
 	select {
 	case <-sigs:
 		fmt.Println("exitapp,sigs:", sigs)

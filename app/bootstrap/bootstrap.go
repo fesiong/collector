@@ -1,9 +1,9 @@
 package bootstrap
 
 import (
-	"collector"
 	"collector/app/route"
 	"collector/config"
+	"collector/core"
 	"context"
 	"fmt"
 	"github.com/gobuffalo/packr/v2"
@@ -27,7 +27,7 @@ func New(port int, loggerLevel string) *Bootstrap {
 	bootstrap.LoggerLevel = loggerLevel
 
 	//crond
-	collector.Crond()
+	core.Crond()
 
 	return &bootstrap
 }
@@ -45,7 +45,7 @@ func (bootstrap *Bootstrap) Serve() {
 	bootstrap.loadGlobalMiddleware()
 	bootstrap.LoadRoutes()
 	pugEngine := iris.Django("", ".html")
-	box := packr.New("template", config.ExecPath+"app/template")
+	box := packr.New("template", "../template")
 	pugEngine.Binary(box.Find, box.List)
 
 	if config.ServerConfig.Env == "development" {

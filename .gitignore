@@ -2,7 +2,5 @@
 .idea
 /vendor
 /config.json
-/collector.mac
-/collector.linux
-/collector.exe
-/collector
+/collector*
+*packr.go

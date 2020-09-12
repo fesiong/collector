@@ -3,6 +3,7 @@ package route
 import (
 	"collector/app/handler"
 	"collector/config"
+	"fmt"
 	"github.com/kataras/iris/v12"
 )
 
@@ -12,31 +13,31 @@ func Register(app *iris.Application) {
 	app.OnErrorCode(iris.StatusNotFound, handler.NotFound)
 	app.OnErrorCode(iris.StatusInternalServerError, handler.NotFound)
 
-	app.HandleDir("/", config.ServerConfig.ExecPath + "public")
+	app.HandleDir("/", fmt.Sprintf("%spublic", config.ExecPath))
 	app.Get("/", handler.Inspect, handler.Index)
 
 	app.Get("/install", handler.Install)
 	app.Post("/install", handler.InstallForm)
 
-	app.Get("/source", handler.ArticleSource)
-	app.Get("/article", handler.ArticleList)
-	app.Get("/keywords", handler.Keywords)
-	app.Get("/setting", handler.DefaultSetting)
-	app.Get("/publish", handler.PublishSetting)
+	app.Get("/source", handler.Inspect, handler.ArticleSource)
+	app.Get("/article", handler.Inspect, handler.ArticleList)
+	app.Get("/keywords", handler.Inspect, handler.Keywords)
+	app.Get("/setting", handler.Inspect, handler.DefaultSetting)
+	app.Get("/publish", handler.Inspect, handler.PublishSetting)
 
-	app.Post("/setting", handler.DefaultSettingForm)
-	app.Post("/publish", handler.PublishSettingForm)
+	app.Post("/setting", handler.InspectJson, handler.DefaultSettingForm)
+	app.Post("/publish", handler.InspectJson, handler.PublishSettingForm)
 
-	app.Get("/api/index/echarts", handler.IndexEchartsApi)
+	app.Get("/api/index/echarts", handler.InspectJson, handler.IndexEchartsApi)
 
-	app.Get("/api/article/list", handler.ArticleListApi)
-	app.Post("/api/article/delete", handler.ArticleDeleteApi)
+	app.Get("/api/article/list", handler.InspectJson, handler.ArticleListApi)
+	app.Post("/api/article/delete", handler.InspectJson, handler.ArticleDeleteApi)
 
-	app.Get("/api/article/source/list", handler.ArticleSourceListApi)
-	app.Post("/api/article/source/delete", handler.ArticleSourceDeleteApi)
-	app.Post("/api/article/source/save", handler.ArticleSourceSaveApi)
-	app.Get("/api/setting", handler.DefaultSettingApi)
-	app.Get("/api/publish", handler.PublishSettingApi)
+	app.Get("/api/article/source/list", handler.InspectJson, handler.ArticleSourceListApi)
+	app.Post("/api/article/source/delete", handler.InspectJson, handler.ArticleSourceDeleteApi)
+	app.Post("/api/article/source/save", handler.InspectJson, handler.ArticleSourceSaveApi)
+	app.Get("/api/setting", handler.InspectJson, handler.DefaultSettingApi)
+	app.Get("/api/publish", handler.InspectJson, handler.PublishSettingApi)
 }
 
 func Cors(ctx iris.Context) {

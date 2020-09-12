@@ -46,8 +46,9 @@ func InitJSON() {
 	configStr := ""
 	if err != nil {
 		//文件不存在，使用默认配置
-		box := packr.New("default", ExecPath+"default")
-		configStr, _ = box.FindString("config.json")
+		box := packr.New("default", "../default")
+		configStr, err = box.FindString("config.json")
+		fmt.Println(err)
 	} else {
 		configStr = string(buf[:])
 	}

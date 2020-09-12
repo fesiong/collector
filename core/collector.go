@@ -1,4 +1,4 @@
-package collector
+package core
 
 import (
 	"collector/config"
@@ -38,7 +38,7 @@ func Crond() {
 	//一次使用几个通道
 	ch = make(chan string, config.CollectorConfig.Channels)
 
-	keyword.Extractor.Init(keyword.DefaultProps, true, config.ExecPath + "dictionary.txt")
+	keyword.Extractor.Init(keyword.DefaultProps, true, config.ExecPath+"dictionary.txt")
 
 	fmt.Println("collection")
 
@@ -191,7 +191,7 @@ func GetArticleDetail(v Article) {
 	AutoPublish(&article)
 }
 
-func AutoPublish(article *Article){
+func AutoPublish(article *Article) {
 	if config.ContentConfig.AutoPublish == 0 || article.Status != 1 {
 		return
 	}
@@ -256,7 +256,7 @@ func AutoPublish(article *Article){
 		publishDataKeys := make([]string, len(publishData))
 		publishDataValues := make([]string, len(publishData))
 		j := 0
-		for k,v := range publishData {
+		for k, v := range publishData {
 			publishDataKeys[j] = k
 			publishDataValues[j] = fmt.Sprintf("'%s'", v)
 			j++
@@ -272,7 +272,7 @@ func AutoPublish(article *Article){
 		}
 	} else if config.ContentConfig.AutoPublish == 2 && config.ContentConfig.RemoteUrl != "" {
 		//headers
-		sg := gorequest.New().Timeout(10*time.Second).Post(config.ContentConfig.RemoteUrl)
+		sg := gorequest.New().Timeout(10 * time.Second).Post(config.ContentConfig.RemoteUrl)
 		if config.ContentConfig.ContentType == "json" {
 			sg = sg.Set("Content-Type", "multipart/form-data")
 		} else if config.ContentConfig.ContentType == "urlencode" {
@@ -289,11 +289,11 @@ func AutoPublish(article *Article){
 			urlInfo, _ := url.Parse(config.ContentConfig.RemoteUrl)
 			for _, v := range config.ContentConfig.Cookies {
 				cookie := &http.Cookie{
-					Name:       v.Key,
-					Value:      v.Value,
-					Path:       "/",
-					Domain:     urlInfo.Hostname(),
-					Expires:    time.Now().Add(86400 * time.Second),
+					Name:    v.Key,
+					Value:   v.Value,
+					Path:    "/",
+					Domain:  urlInfo.Hostname(),
+					Expires: time.Now().Add(86400 * time.Second),
 				}
 				sg = sg.AddCookie(cookie)
 			}
@@ -337,8 +337,8 @@ func CollectLinks(link string) ([]Article, error) {
 		//斜杠/结尾的抛弃
 		//if strings.HasSuffix(href, "/") == false {
 		articles = append(articles, Article{
-			Title: title,
-			OriginUrl:  href,
+			Title:     title,
+			OriginUrl: href,
 		})
 		//}
 	}
@@ -615,8 +615,7 @@ func (article *Article) ParseTitle(doc *goquery.Document, body string) {
 	article.Title = title
 }
 
-
-func(article *Article)ParseContent(doc *goquery.Document, body string) {
+func (article *Article) ParseContent(doc *goquery.Document, body string) {
 	content := ""
 	contentText := ""
 	description := ""
@@ -787,7 +786,6 @@ func (article *Article) ReplaceHref(src string) string {
 	if len(match) < 1 {
 		return src
 	}
-
 
 	if match[1] != "" {
 		newSrc := ParseLink(match[1], article.OriginPath)

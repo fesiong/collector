@@ -1,21 +1,21 @@
 package config
 
 type collectorConfig struct {
-	ErrorTimes int	`json:"error_times"`
-	Channels int `json:"channels"`
-	TitleMinLength int `json:"title_min_length"`
-	ContentMinLength int `json:"content_min_length"`
-	TitleExclude []string `json:"title_exclude"`
+	ErrorTimes         int      `json:"error_times"`
+	Channels           int      `json:"channels"`
+	TitleMinLength     int      `json:"title_min_length"`
+	ContentMinLength   int      `json:"content_min_length"`
+	TitleExclude       []string `json:"title_exclude"`
 	TitleExcludePrefix []string `json:"title_exclude_prefix"`
 	TitleExcludeSuffix []string `json:"title_exclude_suffix"`
-	ContentExclude []string `json:"content_exclude"`
+	ContentExclude     []string `json:"content_exclude"`
 	ContentExcludeLine []string `json:"content_exclude_line"`
 }
 
 var defaultCollectorConfig = collectorConfig{
-	ErrorTimes: 5,
-	Channels: 5,
-	TitleMinLength: 6,
+	ErrorTimes:       5,
+	Channels:         5,
+	TitleMinLength:   6,
 	ContentMinLength: 200,
 	TitleExclude: []string{
 		"法律声明",

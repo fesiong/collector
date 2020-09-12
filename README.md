@@ -33,11 +33,11 @@ go mod tidy
 go mod vendor
 go build
 # to linux 
-# CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o collector.linux app/main.go
+# CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o collector
 # to windows
-# CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o collector.exe app/main.go
+# CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o collector.exe
 # to mac
-# CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o collector.mac app/main.go
+# CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o collector
 ```
 编译结束后，运行编译出来的文件，然后双击运行可执行文件，在打开的浏览器中的可视化界面，填写数据库信息，完成初始化配置，添加采集源，即可开始采集之旅。
 

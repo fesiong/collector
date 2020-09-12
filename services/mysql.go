@@ -37,7 +37,7 @@ func InitDB() {
 	}
 }
 
-var DB * gorm.DB
+var DB *gorm.DB
 
 func init() {
 	InitDB()

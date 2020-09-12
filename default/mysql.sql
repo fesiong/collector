@@ -20,8 +20,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------
 -- Table structure for fe_article
 -- ----------------------------
-DROP TABLE IF EXISTS `fe_article`;
-CREATE TABLE `fe_article` (
+CREATE TABLE IF NOT EXISTS `fe_article` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `source_id` int(11) NOT NULL DEFAULT 0,
   `title` varchar(250) NOT NULL DEFAULT '',
@@ -49,8 +48,7 @@ CREATE TABLE `fe_article` (
 -- ----------------------------
 -- Table structure for fe_article_data
 -- ----------------------------
-DROP TABLE IF EXISTS `fe_article_data`;
-CREATE TABLE `fe_article_data` (
+CREATE TABLE IF NOT EXISTS  `fe_article_data` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `content` longtext DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -59,8 +57,7 @@ CREATE TABLE `fe_article_data` (
 -- ----------------------------
 -- Table structure for fe_article_source
 -- ----------------------------
-DROP TABLE IF EXISTS `fe_article_source`;
-CREATE TABLE `fe_article_source` (
+CREATE TABLE IF NOT EXISTS  `fe_article_source` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `url` varchar(250) NOT NULL DEFAULT '' COMMENT '列表源',
   `url_type` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '0,政策，1新闻',

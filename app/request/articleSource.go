@@ -8,5 +8,5 @@ type ArticleSource struct {
 }
 
 type Article struct {
-	ID         int    `form:"id"`
+	ID int `form:"id"`
 }

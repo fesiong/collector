@@ -1,4 +1,4 @@
-package collector
+package core
 
 import (
 	"collector/services"

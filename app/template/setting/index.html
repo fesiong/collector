@@ -111,7 +111,7 @@
             $(".tag-input").each(function(i, item){
                 let type = $(item).data('type');
                 for(let i in collector[type]){
-                    $(item).next('.tag-items').append($('#tag-template').html().replaceAll('itemType', type).replaceAll('itemIndex', i).replaceAll('itemTitle', collector[type][i]));
+                    $(item).next('.tag-items').append($('#tag-template').html().replace(/itemType/g, type).replace(/itemIndex/g, i).replace(/itemTitle/g, collector[type][i]));
                 }
             })
         }, 'json');
@@ -136,7 +136,7 @@
                 }
                 if(!exists) {
                     collector[type].push(val);
-                    $(this).next('.tag-items').append($('#tag-template').html().replaceAll('itemType', type).replaceAll('itemIndex', i).replaceAll('itemTitle', val));
+                    $(this).next('.tag-items').append($('#tag-template').html().replace(/itemType/g, type).replace(/itemIndex/g, i).replace(/itemTitle/g, val));
                     $(this).val("");
                 }
             }
