@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gobuffalo/packr/v2"
 	"io"
 	"io/ioutil"
 	"os"
@@ -45,13 +44,11 @@ func InitJSON() {
 	buf, err := ioutil.ReadFile(fmt.Sprintf("%sconfig.json", ExecPath))
 	configStr := ""
 	if err != nil {
-		//文件不存在，使用默认配置
-		box := packr.New("default", "../default")
-		configStr, err = box.FindString("config.json")
-		fmt.Println(err)
-	} else {
-		configStr = string(buf[:])
+		//文件不存在
+		fmt.Println("根目录下不存在配置文件config.json")
+		os.Exit(-1)
 	}
+	configStr = string(buf[:])
 	reg := regexp.MustCompile(`/\*.*\*/`)
 
 	configStr = reg.ReplaceAllString(configStr, "")

@@ -6,7 +6,6 @@ import (
 	"collector/core"
 	"context"
 	"fmt"
-	"github.com/gobuffalo/packr/v2"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/recover"
 	"os/exec"
@@ -44,9 +43,7 @@ func (bootstrap *Bootstrap) Serve() {
 	bootstrap.Application.Logger().SetLevel(bootstrap.LoggerLevel)
 	bootstrap.loadGlobalMiddleware()
 	bootstrap.LoadRoutes()
-	pugEngine := iris.Django("", ".html")
-	box := packr.New("template", "../template")
-	pugEngine.Binary(box.Find, box.List)
+	pugEngine := iris.Django(fmt.Sprintf("%stemplate", config.ExecPath), ".html")
 
 	if config.ServerConfig.Env == "development" {
 		//测试环境下动态加载

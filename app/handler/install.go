@@ -3,13 +3,11 @@ package handler
 import (
 	"collector/app/request"
 	"collector/config"
+	"collector/core"
 	"collector/services"
 	"fmt"
-	"github.com/gobuffalo/packr/v2"
 	"github.com/jinzhu/gorm"
 	"github.com/kataras/iris/v12"
-	"log"
-	"strings"
 )
 
 func Install(ctx iris.Context) {
@@ -45,19 +43,7 @@ func InstallForm(ctx iris.Context) {
 		})
 		return
 	}
-	//执行数据库初始化操作
-	box := packr.New("default", "../../default")
-	sql, err := box.FindString("mysql.sql")
-	log.Println(err)
-	sql = strings.ReplaceAll(sql, "\r\n", "\n")
-	sql = strings.ReplaceAll(sql, "\r", "\n")
-	sqlSlice := strings.Split(sql, ";\n")
-	for _, v := range sqlSlice {
-		if v == "" {
-			continue
-		}
-		db.Exec(v)
-	}
+	db.AutoMigrate(&core.Article{}, &core.ArticleData{}, &core.ArticleSource{})
 
 	config.JsonData.MySQL.Database = req.Database
 	config.JsonData.MySQL.User = req.User
