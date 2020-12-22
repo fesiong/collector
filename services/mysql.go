@@ -26,13 +26,6 @@ func InitDB() {
 		//禁用复数表名
 		db.SingularTable(true)
 
-		//统一加前缀
-		if config.MySQLConfig.TablePrefix != "" {
-			gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
-				return config.MySQLConfig.TablePrefix + defaultTableName
-			}
-		}
-
 		DB = db
 	}
 }

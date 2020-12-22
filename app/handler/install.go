@@ -35,7 +35,7 @@ func InstallForm(ctx iris.Context) {
 
 	mysqlUrl := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local",
 		req.User, req.Password, req.Host, req.Port, req.Database, config.MySQLConfig.Charset)
-	db, err := gorm.Open("mysql", mysqlUrl)
+	_, err := gorm.Open("mysql", mysqlUrl)
 	if err != nil {
 		ctx.JSON(iris.Map{
 			"code": config.StatusFailed,
@@ -43,14 +43,12 @@ func InstallForm(ctx iris.Context) {
 		})
 		return
 	}
-	db.AutoMigrate(&core.Article{}, &core.ArticleData{}, &core.ArticleSource{})
 
 	config.JsonData.MySQL.Database = req.Database
 	config.JsonData.MySQL.User = req.User
 	config.JsonData.MySQL.Password = req.Password
 	config.JsonData.MySQL.Host = req.Host
 	config.JsonData.MySQL.Port = req.Port
-	config.JsonData.MySQL.TablePrefix = req.TablePrefix
 	config.JsonData.MySQL.Url = mysqlUrl
 	err = config.WriteConfig()
 	if err != nil {
@@ -63,6 +61,7 @@ func InstallForm(ctx iris.Context) {
 
 	config.InitJSON()
 	services.InitDB()
+	services.DB.AutoMigrate(&core.Article{}, &core.ArticleData{}, &core.ArticleSource{})
 
 	ctx.JSON(iris.Map{
 		"code": config.StatusOK,

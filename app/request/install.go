@@ -7,5 +7,4 @@ type Install struct {
 	Host        string `form:"host" validate:"required"`
 	Port        int    `form:"port" validate:"required"`
 	Charset     string `form:"charset"`
-	TablePrefix string `form:"table_prefix" validate:"required"`
 }

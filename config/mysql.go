@@ -7,7 +7,6 @@ type mySQLConfig struct {
 	Host               string `json:"host"`
 	Port               int    `json:"port"`
 	Charset            string `json:"charset"`
-	TablePrefix        string `json:"table_prefix"`
 	MaxIdleConnections int    `json:"max_idle_connections"`
 	MaxOpenConnections int    `json:"max_open_connections"`
 	Url                string `json:"-"`

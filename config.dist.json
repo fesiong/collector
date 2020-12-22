@@ -6,7 +6,6 @@
 		"host": "localhost",
 		"port": 3306,
 		"charset": "utf8mb4",
-		"table_prefix": "fe_",
 		"max_idle_connections": 1000,
 		"max_open_connections": 100000
 	},
