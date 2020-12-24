@@ -4,6 +4,7 @@ import (
 	"collector/config"
 	"collector/library"
 	"collector/services"
+	"crypto/tls"
 	"fmt"
 	"github.com/Chain-Zhang/pinyin"
 	"github.com/PuerkitoBio/goquery"
@@ -86,7 +87,7 @@ func CollectListTask() {
 	for _, v := range articleSources {
 		//ch <- fmt.Sprintf("%d", i)
 		//waitGroup.Add(1)
-		GetArticleLinks(v)
+		getArticleLinks(v)
 	}
 
 	//waitGroup.Wait()
@@ -105,13 +106,21 @@ func CollectDetailTask() {
 	for _, vv := range articleList {
 		ch <- vv.OriginUrl
 		waitGroup.Add(1)
-		go GetArticleDetail(vv)
+		go getArticleDetail(vv)
 	}
 
 	waitGroup.Wait()
 }
 
-func GetArticleLinks(v ArticleSource) {
+func getArticleLinks(v ArticleSource) {
+	//defer func() {
+	//	waitGroup.Done()
+	//	<-ch
+	//}()
+	GetArticleLinks(&v)
+}
+
+func GetArticleLinks(v *ArticleSource) {
 	//defer func() {
 	//	waitGroup.Done()
 	//	<-ch
@@ -128,21 +137,25 @@ func GetArticleLinks(v ArticleSource) {
 			db.Model(Article{}).Where(Article{OriginUrl: article.OriginUrl}).FirstOrCreate(&article)
 		}
 	} else {
-		db.Model(&v).Update("error_times", v.ErrorTimes+1)
+		db.Model(v).Update("error_times", v.ErrorTimes+1)
 	}
 }
 
-func GetArticleDetail(v Article) {
+func getArticleDetail(v Article) {
 	defer func() {
 		waitGroup.Done()
 		<-ch
 	}()
 
+	GetArticleDetail(&v)
+}
+
+func GetArticleDetail(v *Article) {
 	db := services.DB
 	//标记当前为执行中
 	db.Model(Article{}).Where("`id` = ?", v.Id).Update("status", 2)
 
-	_ = CollectDetail(&v)
+	_ = CollectDetail(v)
 
 	//更新到数据库中
 	status := int(1)
@@ -188,7 +201,7 @@ func GetArticleDetail(v Article) {
 	fmt.Println(status, v.Title, v.OriginUrl)
 	article.Save(db)
 
-	AutoPublish(&article)
+	AutoPublish(article)
 }
 
 func AutoPublish(article *Article) {
@@ -622,7 +635,7 @@ func (article *Article) ParseContent(doc *goquery.Document, body string) {
 	contentLength := 0
 
 	//对一些固定的内容，直接获取值
-	contentItems := doc.Find("UCAPCONTENT,#mainText,.article-content,#article-content,#articleContnet,.entry-content,.the_body,.rich_media_content,#js_content,.word_content,.pages_content,.wendang_content,#content")
+	contentItems := doc.Find("UCAPCONTENT,#mainText,.article-content,#article-content,#articleContnet,.entry-content,.the_body,.rich_media_content,#js_content,.word_content,.pages_content,.wendang_content,#content,.RichText,.markdown-section")
 	if contentItems.Length() > 0 {
 		for i := range contentItems.Nodes {
 			contentItem := contentItems.Eq(i)
@@ -641,7 +654,16 @@ func (article *Article) ParseContent(doc *goquery.Document, body string) {
 			if curLen < config.CollectorConfig.ContentMinLength {
 				contentText = ""
 			}
-			aCount := contentItem.Find("a").Length()
+			aCount := 0
+			aLinks := contentItem.Find("a")
+			if aLinks.Length() > 0 {
+				for i := range aLinks.Nodes {
+					href, exist := aLinks.Eq(i).Attr("href")
+					if exist && href != "" && !strings.HasPrefix(href, "#") {
+						aCount++
+					}
+				}
+			}
 			if aCount > 5 {
 				//太多连接了，直接放弃该内容
 				contentText = ""
@@ -652,16 +674,16 @@ func (article *Article) ParseContent(doc *goquery.Document, body string) {
 			if divs.Length() > 0 {
 				for i := range divs.Nodes {
 					div := divs.Eq(i)
-					if (div.Find("div").Length() == 0 || utf8.RuneCountInString(div.Find("div").Text()) < 100) && utf8.RuneCountInString(div.Text()) >= config.CollectorConfig.ContentMinLength {
+					if (div.Find("div").Length() == 0 || utf8.RuneCountInString(div.Find("div").Text()) < 100) && div.ChildrenFiltered("p").Length() > 0 && utf8.RuneCountInString(div.Text()) >= config.CollectorConfig.ContentMinLength {
 						contentItem = div
 						break
 					}
 				}
 			}
 			//排除一些不对的标签
-			otherLength := contentItem.Find("input,textarea,form,button,footer,.footer").Length()
-			if otherLength > 0 {
-				contentText = ""
+			otherItems := contentItem.Find("input,textarea,form,button,footer,.footer")
+			if otherItems.Length() > 0 {
+				otherItems.Remove()
 			}
 			contentItem.Find("h1").Remove()
 			//根据规则过滤
@@ -686,7 +708,7 @@ func (article *Article) ParseContent(doc *goquery.Document, body string) {
 	if contentText == "" {
 		content = ""
 		//通用的获取方法
-		divs := doc.Find("div")
+		divs := doc.Find("div,article")
 		for i := range divs.Nodes {
 			item := divs.Eq(i)
 			pCount := item.ChildrenFiltered("p").Length()
@@ -798,7 +820,7 @@ func (article *Article) ReplaceHref(src string) string {
  * 请求域名返回数据
  */
 func Request(urlPath string) (*RequestData, error) {
-	resp, body, errs := gorequest.New().Timeout(90 * time.Second).Get(urlPath).End()
+	resp, body, errs := gorequest.New().TLSClientConfig(&tls.Config{ InsecureSkipVerify: true}).Timeout(90 * time.Second).AppendHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36").Get(urlPath).End()
 	if len(errs) > 0 {
 		//如果是https,则尝试退回http请求
 		if strings.HasPrefix(urlPath, "https") {
@@ -908,11 +930,11 @@ func HasContain(need string, needArray []string) bool {
 }
 
 func GetKeywords(content string, num int) []string {
-	lenth := 2
-	keywords := keyword.Extractor.Extract(content, 1000)
 	var words []string
+	length := 2
+	keywords := keyword.Extractor.Extract(content, 1000)
 	for _, v := range keywords {
-		if utf8.RuneCountInString(v) >= lenth {
+		if utf8.RuneCountInString(v) >= length {
 			words = append(words, v)
 		}
 	}

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -25,6 +26,9 @@ func InitJSON() {
 	sep := string(os.PathSeparator)
 	root := filepath.Dir(os.Args[0])
 	ExecPath, _ = filepath.Abs(root)
+	if strings.Contains(ExecPath, "/T/") {
+		ExecPath, _ = os.Getwd()
+	}
 	length := utf8.RuneCountInString(ExecPath)
 	lastChar := ExecPath[length-1:]
 	if lastChar != sep {

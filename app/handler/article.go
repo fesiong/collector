@@ -176,10 +176,93 @@ func ArticleSourceSaveApi(ctx iris.Context) {
 		})
 		return
 	}
+	//添加完，马上抓取
+	core.GetArticleLinks(source)
 
 	ctx.JSON(iris.Map{
 		"code": config.StatusOK,
 		"msg":  "添加/修改成功",
 		"data": source,
+	})
+}
+
+func ArticlePublishApi(ctx iris.Context) {
+	var req request.Article
+	if err := ctx.ReadForm(&req); err != nil {
+		ctx.JSON(iris.Map{
+			"code": config.StatusFailed,
+			"msg":  err.Error(),
+		})
+		return
+	}
+
+	article, err := provider.GetArticleById(req.ID)
+	if err != nil {
+		ctx.JSON(iris.Map{
+			"code": config.StatusFailed,
+			"msg":  err.Error(),
+		})
+		return
+	}
+
+	core.AutoPublish(article)
+
+	ctx.JSON(iris.Map{
+		"code": config.StatusOK,
+		"msg":  "删除成功",
+	})
+}
+
+func ArticleCatchApi(ctx iris.Context) {
+	var req request.Article
+	if err := ctx.ReadForm(&req); err != nil {
+		ctx.JSON(iris.Map{
+			"code": config.StatusFailed,
+			"msg":  err.Error(),
+		})
+		return
+	}
+
+	article, err := provider.GetArticleById(req.ID)
+	if err != nil {
+		ctx.JSON(iris.Map{
+			"code": config.StatusFailed,
+			"msg":  err.Error(),
+		})
+		return
+	}
+
+	go core.GetArticleDetail(article)
+
+	ctx.JSON(iris.Map{
+		"code": config.StatusOK,
+		"msg":  "抓取任务已执行",
+	})
+}
+
+func ArticleSourceCatchApi(ctx iris.Context) {
+	var req request.ArticleSource
+	if err := ctx.ReadForm(&req); err != nil {
+		ctx.JSON(iris.Map{
+			"code": config.StatusFailed,
+			"msg":  err.Error(),
+		})
+		return
+	}
+
+	source, err := provider.GetArticleSourceById(req.ID)
+	if err != nil {
+		ctx.JSON(iris.Map{
+			"code": config.StatusFailed,
+			"msg":  err.Error(),
+		})
+		return
+	}
+
+	go core.GetArticleLinks(source)
+
+	ctx.JSON(iris.Map{
+		"code": config.StatusOK,
+		"msg":  "抓取任务执行",
 	})
 }

@@ -23,6 +23,7 @@
     </div>
 </script>
 <script type="text/html" id="control">
+    <a class="layui-btn layui-btn-xs" lay-event="catch">抓取</a>
     <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
     <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
 </script>
@@ -44,7 +45,7 @@
                 ,{field: 'id', title: 'ID', width:80}
                 ,{field: 'url', title: '列表连接', edit: 'text', cellMinWidth:300}
                 ,{field: 'error_times', title: '尝试错误次数', edit: 'text', width:150}
-                ,{fixed: 'right', width:150, align:'center', toolbar: '#control'}
+                ,{fixed: 'right', width:180, align:'center', toolbar: '#control'}
             ]]
         });
         table.on('toolbar(list)', function(obj){
@@ -101,6 +102,10 @@
                 });
             } else if(layEvent === 'edit'){
                 layer.msg("单击需要修改的字段即可修改");
+            } else if(layEvent === 'catch'){
+                $.post("/api/article/source/catch", {id: data.id}, function(res) {
+                    layer.msg(res.msg);
+                }, 'json');
             }
         });
         table.on('edit(list)', function(obj){

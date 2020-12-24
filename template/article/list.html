@@ -12,7 +12,9 @@
     </div>
 </script>
 <script type="text/html" id="control">
-    <a class="layui-btn layui-btn-xs" lay-event="view">查看内容</a>
+    <a class="layui-btn layui-btn-xs" lay-event="catch">重抓</a>
+    <a class="layui-btn layui-btn-xs" lay-event="view">查看</a>
+    <a class="layui-btn layui-btn-xs" lay-event="publish">发布</a>
     <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
 </script>
 <script>
@@ -40,7 +42,7 @@
                         return d.status === 3 ? "无效数据" : d.status === 2 ? "采集中" : d.status === 1 ? "有效数据" : d.status === 0 ? "待采集" : "其他数据";
                     }
                 }
-                ,{fixed: 'right', width:150, align:'center', toolbar: '#control'}
+                ,{fixed: 'right', width:220, align:'center', toolbar: '#control'}
             ]]
         });
         table.on('toolbar(list)', function(obj){
@@ -67,7 +69,7 @@
             let data = obj.data;
             let layEvent = obj.event;
             if(layEvent === 'del'){
-                layer.confirm('真的删除该条数据源吗？', function(index){
+                layer.confirm('真的删除该条数据吗？', function(index){
                     $.post("/api/article/delete", {id: data.id}, function(res) {
                         if(res.code === 0) {
                             obj.del();
@@ -85,6 +87,19 @@
                     btn: "确定",
                     btnAlign: 'c',
                 })
+            } else if(layEvent === 'catch'){
+                $.post("/api/article/catch", {id: data.id}, function(res) {
+                    layer.msg(res.msg);
+                }, 'json');
+            } else if(layEvent === 'publish'){
+                if(data.status !== 1) {
+                    return layer.msg("该条记录不是有效内容，无法发布");
+                }
+                layer.confirm('本采集器不能判断是否是重复发布，真的发布该内容吗？', function(index){
+                    $.post("/api/article/publish", {id: data.id}, function(res) {
+                        layer.msg(res.msg);
+                    }, 'json');
+                });
             }
         });
     });

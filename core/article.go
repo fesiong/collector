@@ -44,7 +44,7 @@ func (article *Article) Save(db *gorm.DB) error {
 		article.CreatedTime = int(time.Now().Unix())
 	}
 
-	if err := db.Save(&article).Error; err != nil {
+	if err := db.Save(article).Error; err != nil {
 		return err
 	}
 	articleData := ArticleData{
@@ -58,16 +58,18 @@ func (article *Article) Save(db *gorm.DB) error {
 
 func (article *Article) Delete() error {
 	db := services.DB
-	if err := db.Delete(&article).Error; err != nil {
+	if err := db.Delete(article).Error; err != nil {
 		return err
 	}
+
+	db.Where("id = ?", article.Id).Delete(ArticleData{})
 
 	return nil
 }
 
 func (source *ArticleSource) Save() error {
 	db := services.DB
-	if err := db.Save(&source).Error; err != nil {
+	if err := db.Save(source).Error; err != nil {
 		return err
 	}
 
@@ -76,7 +78,7 @@ func (source *ArticleSource) Save() error {
 
 func (source *ArticleSource) Delete() error {
 	db := services.DB
-	if err := db.Delete(&source).Error; err != nil {
+	if err := db.Delete(source).Error; err != nil {
 		return err
 	}
 

@@ -28,16 +28,22 @@ func Register(app *iris.Application) {
 	app.Post("/setting", handler.InspectJson, handler.DefaultSettingForm)
 	app.Post("/publish", handler.InspectJson, handler.PublishSettingForm)
 
-	app.Get("/api/index/echarts", handler.InspectJson, handler.IndexEchartsApi)
+	api := app.Party("/api", handler.InspectJson)
+	{
+		api.Get("/index/echarts", handler.IndexEchartsApi)
 
-	app.Get("/api/article/list", handler.InspectJson, handler.ArticleListApi)
-	app.Post("/api/article/delete", handler.InspectJson, handler.ArticleDeleteApi)
+		api.Get("/article/list", handler.ArticleListApi)
+		api.Post("/article/delete", handler.ArticleDeleteApi)
+		api.Post("/article/publish", handler.ArticlePublishApi)
+		api.Post("/article/catch", handler.ArticleCatchApi)
 
-	app.Get("/api/article/source/list", handler.InspectJson, handler.ArticleSourceListApi)
-	app.Post("/api/article/source/delete", handler.InspectJson, handler.ArticleSourceDeleteApi)
-	app.Post("/api/article/source/save", handler.InspectJson, handler.ArticleSourceSaveApi)
-	app.Get("/api/setting", handler.InspectJson, handler.DefaultSettingApi)
-	app.Get("/api/publish", handler.InspectJson, handler.PublishSettingApi)
+		api.Get("/article/source/list", handler.ArticleSourceListApi)
+		api.Post("/article/source/delete", handler.ArticleSourceDeleteApi)
+		api.Post("/article/source/save", handler.ArticleSourceSaveApi)
+		api.Post("/article/source/catch", handler.ArticleSourceCatchApi)
+		api.Get("/setting", handler.DefaultSettingApi)
+		api.Get("/publish", handler.PublishSettingApi)
+	}
 }
 
 func Cors(ctx iris.Context) {

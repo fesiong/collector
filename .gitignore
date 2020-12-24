@@ -3,4 +3,4 @@
 /vendor
 /config.json
 /collector*
-*packr.go
+/test
