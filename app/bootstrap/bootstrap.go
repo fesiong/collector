@@ -35,14 +35,14 @@ func (bootstrap *Bootstrap) loadGlobalMiddleware() {
 	bootstrap.Application.Use(recover.New())
 }
 
-func (bootstrap *Bootstrap) LoadRoutes() {
+func (bootstrap *Bootstrap) loadRoutes() {
 	route.Register(bootstrap.Application)
 }
 
 func (bootstrap *Bootstrap) Serve() {
 	bootstrap.Application.Logger().SetLevel(bootstrap.LoggerLevel)
 	bootstrap.loadGlobalMiddleware()
-	bootstrap.LoadRoutes()
+	bootstrap.loadRoutes()
 	pugEngine := iris.Django(fmt.Sprintf("%stemplate", config.ExecPath), ".html")
 
 	if config.ServerConfig.Env == "development" {

@@ -39,8 +39,6 @@ func Crond() {
 	//一次使用几个通道
 	ch = make(chan string, config.CollectorConfig.Channels)
 
-	keyword.Extractor.Init(keyword.DefaultProps, true, config.ExecPath+"dictionary.txt")
-
 	fmt.Println("collection")
 
 	//link := &Article{
@@ -943,4 +941,8 @@ func GetKeywords(content string, num int) []string {
 		return words[:num]
 	}
 	return words
+}
+
+func init() {
+	keyword.Extractor.Init(keyword.DefaultProps, true, config.ExecPath+"dictionary.txt")
 }

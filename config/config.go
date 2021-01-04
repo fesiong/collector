@@ -26,7 +26,7 @@ func InitJSON() {
 	sep := string(os.PathSeparator)
 	root := filepath.Dir(os.Args[0])
 	ExecPath, _ = filepath.Abs(root)
-	if strings.Contains(ExecPath, "/T/") {
+	if strings.Contains(ExecPath, "/T") || strings.Contains(ExecPath, "temp") {
 		ExecPath, _ = os.Getwd()
 	}
 	length := utf8.RuneCountInString(ExecPath)
