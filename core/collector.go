@@ -160,7 +160,7 @@ func GetArticleDetail(v *Article) {
 	if v.Content == "" {
 		status = 3
 	}
-	if utf8.RuneCountInString(v.Title) < 10 {
+	if utf8.RuneCountInString(v.Title) < config.CollectorConfig.TitleMinLength {
 		status = 3
 	}
 	urlArr := strings.Split(v.OriginUrl, "/")
@@ -175,7 +175,7 @@ func GetArticleDetail(v *Article) {
 		status = 3
 	}
 	//小于500字 内容，不过审
-	if utf8.RuneCountInString(v.ContentText) < 200 {
+	if utf8.RuneCountInString(v.ContentText) < config.CollectorConfig.ContentMinLength {
 		status = 3
 	}
 	if strings.Contains(v.ContentText, "ICP备") || strings.Contains(v.ContentText, "政府网站标识码") || strings.Contains(v.ContentText, "以上版本浏览本站") || strings.Contains(v.ContentText, "版权声明") || strings.Contains(v.ContentText, "公网安备") {
