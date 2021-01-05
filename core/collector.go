@@ -657,7 +657,8 @@ func (article *Article) ParseContent(doc *goquery.Document, body string) {
 			if aLinks.Length() > 0 {
 				for i := range aLinks.Nodes {
 					href, exist := aLinks.Eq(i).Attr("href")
-					if exist && href != "" && !strings.HasPrefix(href, "#") {
+					aText := strings.TrimSpace(aLinks.Eq(i).Text())
+					if exist && href != "" && !strings.HasPrefix(href, "#") && aText != "" {
 						aCount++
 					}
 				}
@@ -711,7 +712,17 @@ func (article *Article) ParseContent(doc *goquery.Document, body string) {
 			item := divs.Eq(i)
 			pCount := item.ChildrenFiltered("p").Length()
 			brCount := item.ChildrenFiltered("br").Length()
-			aCount := item.Find("a").Length()
+			aCount := 0
+			aLinks := item.Find("a").Find("a")
+			if aLinks.Length() > 0 {
+				for i := range aLinks.Nodes {
+					href, exist := aLinks.Eq(i).Attr("href")
+					aText := strings.TrimSpace(aLinks.Eq(i).Text())
+					if exist && href != "" && !strings.HasPrefix(href, "#") && aText != "" {
+						aCount++
+					}
+				}
+			}
 			if aCount > 5 {
 				//太多连接了，直接放弃该内容
 				continue
