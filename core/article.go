@@ -84,3 +84,14 @@ func (source *ArticleSource) Delete() error {
 
 	return nil
 }
+
+func AutoMigrateDB() {
+	if services.DB != nil {
+		//自动迁移数据库
+		services.DB.AutoMigrate(
+			&Article{},
+			&ArticleData{},
+			&ArticleSource{},
+		)
+	}
+}

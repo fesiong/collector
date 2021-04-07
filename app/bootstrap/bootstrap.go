@@ -43,6 +43,10 @@ func (bootstrap *Bootstrap) Serve() {
 	bootstrap.Application.Logger().SetLevel(bootstrap.LoggerLevel)
 	bootstrap.loadGlobalMiddleware()
 	bootstrap.loadRoutes()
+
+	//AutoMigrateDB
+	core.AutoMigrateDB()
+
 	pugEngine := iris.Django(fmt.Sprintf("%stemplate", config.ExecPath), ".html")
 
 	if config.ServerConfig.Env == "development" {
