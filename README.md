@@ -51,6 +51,6 @@ go build
 欢迎有能力有贡献精神的个人或团体参与到本采集器的开发完善工作中来，共同完善采集功能。请fork一个分支，然后在上面修改，修改完了提交pull request合并请求。
 
 ## 版权声明
-© Fesion，tpyzlxy@163.com
+© Sinclair，tpyzlxy@gmail.com
 
 Released under the [MIT License](https://github.com/fesiong/collector/blob/master/License)
